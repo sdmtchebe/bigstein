@@ -1,0 +1,5664 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Night Shift - Big Stein Island</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      overflow: hidden;
+      user-select: none;
+      cursor: default;
+      font-family: 'Courier New', monospace;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       STAGE — Fixed 1920x1080 design surface, uniformly scaled with JS.
+       Everything inside is laid out in pixel coordinates of this canvas.
+       The JS handler (bottom of file) computes a uniform scale factor so the
+       stage fits entirely inside the viewport on ANY screen size, preserving
+       aspect ratio (letterboxed with black bars on non-16:9 screens).
+       Because #stage has a `transform`, it becomes the containing block for
+       its `position: fixed` descendants, so all internal layout is preserved.
+       ═══════════════════════════════════════════════════════════════════════════ */
+    #stage {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: 1920px;
+      height: 1080px;
+      transform-origin: center center;
+      transform: translate(-50%, -50%) scale(1);
+      background: #000;
+      overflow: hidden;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+   SCREENS
+═══════════════════════════════════════════════════════════════════════════ */
+
+    /* Loading Screen */
+    #loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #00ff50;
+      font-family: 'Courier New', monospace;
+      z-index: 100;
+    }
+
+    #loader h2 {
+      color: #00ff50;
+      font-size: 32px;
+      margin-bottom: 10px;
+      text-shadow: 0 0 20px #00ff50;
+    }
+
+    #loader p {
+      color: #00b432;
+      font-size: 16px;
+      margin-bottom: 20px;
+    }
+
+    #loader-bar-wrap {
+      width: 400px;
+      height: 8px;
+      background: #111;
+      border-radius: 4px;
+      border: 1px solid #00ff50;
+    }
+
+    #loader-bar {
+      height: 100%;
+      width: 0%;
+      background: #00ff50;
+      border-radius: 4px;
+      transition: width 0.3s;
+    }
+
+    #loader.done {
+      display: none;
+    }
+
+    /* Lobby Screen */
+    #lobby {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      display: none;
+      z-index: 90;
+    }
+
+    #lobby.visible {
+      display: flex;
+    }
+
+    #lobby-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+    }
+
+    #lobby-content {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      padding: 50px;
+    }
+
+    #bigstein-img {
+      height: 80%;
+      max-height: 600px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 30px rgba(0, 0, 0, 0.8));
+      margin-right: 50px;
+    }
+
+    #lobby-right {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+    }
+
+    #lobby-title {
+      font-size: 48px;
+      color: #00ff50;
+      text-shadow: 0 0 30px #00ff50;
+      margin-bottom: 30px;
+      letter-spacing: 4px;
+    }
+
+    #start-btn {
+      background: none;
+      border: 3px solid #00ff50;
+      color: #00ff50;
+      padding: 20px 60px;
+      font-size: 24px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+
+    #start-btn:hover {
+      background: #00ff50;
+      color: #000;
+      transform: scale(1.05);
+    }
+
+    /* Storyline Screen */
+    #storyline {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      display: none;
+      z-index: 80;
+      overflow-y: auto;
+    }
+
+    #storyline.visible {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+
+    #storyline-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    #story-box {
+      position: relative;
+      z-index: 1;
+      background: rgba(0, 0, 0, 0.9);
+      border: 2px solid #00ff50;
+      padding: 50px 50px 40px 50px;
+      max-width: 750px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 0 40px rgba(0, 255, 80, 0.2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      margin: auto;
+    }
+
+    #skip-btn {
+      align-self: flex-end;
+      background: none;
+      border: 1px solid #666;
+      color: #666;
+      padding: 6px 16px;
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    #skip-btn:hover {
+      border-color: #00ff50;
+      color: #00ff50;
+    }
+
+    #story-text {
+      color: #00ff50;
+      font-size: 18px;
+      line-height: 1.8;
+      text-shadow: 0 0 10px rgba(0, 255, 80, 0.5);
+      white-space: pre-wrap;
+      text-align: left;
+      width: 100%;
+    }
+
+    #story-buttons {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .story-btn {
+      background: none;
+      border: 2px solid #00ff50;
+      color: #00ff50;
+      padding: 12px 30px;
+      font-size: 16px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: bold;
+    }
+
+    .story-btn:hover {
+      background: #00ff50;
+      color: #000;
+    }
+
+    .story-btn.primary {
+      background: #00ff50;
+      color: #000;
+    }
+
+    .story-btn.primary:hover {
+      background: #00b432;
+    }
+
+    @keyframes ghost-float {
+      0%, 100% {
+        transform: translateY(-50%) translateX(0);
+      }
+      50% {
+        transform: translateY(-50%) translateX(10px);
+      }
+    }
+
+    /* Game Over Screen */
+    #gameover {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      z-index: 100;
+    }
+
+    #gameover.visible {
+      display: flex;
+    }
+
+    #gameover h1 {
+      color: #ff0000;
+      font-size: 64px;
+      text-shadow: 0 0 30px #ff0000;
+      margin-bottom: 20px;
+    }
+
+    #gameover p {
+      color: #ff6666;
+      font-size: 24px;
+      margin-bottom: 40px;
+      text-align: center;
+      max-width: 600px;
+    }
+
+    #retry-btn {
+      background: none;
+      border: 3px solid #ff0000;
+      color: #ff0000;
+      padding: 15px 50px;
+      font-size: 20px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: bold;
+    }
+
+    #retry-btn:hover {
+      background: #ff0000;
+      color: #000;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+   GAME
+═══════════════════════════════════════════════════════════════════════════ */
+    #game {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: none;
+    }
+
+    #game.visible {
+      display: block;
+    }
+
+    /* Room background */
+    #room-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+    }
+
+    /* Camera viewport — fixed pixel layout inside 1920x1080 stage.
+       Proportions taken from backup.html: top 3%, width 70%, height 60%. */
+    #cam-wrap {
+      position: absolute;
+      z-index: 2;
+      top: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 1344px;
+      height: 648px;
+      display: none;
+    }
+
+    #cam-wrap.visible {
+      display: block;
+    }
+
+    #cam-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      border: 2px solid rgba(0, 255, 80, 0.7);
+      box-shadow: 0 0 20px rgba(0, 255, 80, 0.12), inset 0 0 40px rgba(0, 0, 0, 0.4);
+      transition: filter 0.1s;
+    }
+
+    /* Camera static/lag effect */
+    #cam-canvas.static {
+      filter: brightness(0.2) contrast(3) saturate(0);
+      animation: static-noise 0.05s infinite;
+    }
+
+    @keyframes static-noise {
+      0% {
+        transform: translate(0, 0) scale(1);
+      }
+
+      20% {
+        transform: translate(-3px, 2px) scale(1.01);
+      }
+
+      40% {
+        transform: translate(2px, -2px) scale(0.99);
+      }
+
+      60% {
+        transform: translate(-1px, 3px) scale(1.02);
+      }
+
+      80% {
+        transform: translate(3px, -1px) scale(0.98);
+      }
+
+      100% {
+        transform: translate(-2px, -3px) scale(1);
+      }
+    }
+
+    /* Scanlines */
+    #cam-wrap::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.10) 0px, rgba(0, 0, 0, 0.10) 1px, transparent 1px, transparent 4px);
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    /* Vignette */
+    #cam-wrap::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(ellipse at center, transparent 35%, rgba(0, 0, 0, 0.60) 100%);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* Static overlay for effect */
+    #static-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('data:image/svg+xml,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noise)" opacity="0.5"/></svg>');
+      pointer-events: none;
+      z-index: 4;
+      opacity: 0;
+      mix-blend-mode: overlay;
+    }
+
+    #static-overlay.visible {
+      opacity: 1;
+      animation: static-flicker 0.1s infinite;
+    }
+
+    @keyframes static-flicker {
+      0% {
+        opacity: 0.8;
+      }
+
+      50% {
+        opacity: 0.4;
+      }
+
+      100% {
+        opacity: 0.9;
+      }
+    }
+
+    /* Camera UI overlay */
+    #cam-ui {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      color: #00ff50;
+      font-size: 14px;
+      font-weight: bold;
+      text-shadow: 0 0 8px #00ff50;
+      pointer-events: none;
+    }
+
+    #zoom-btn,
+    #honk-btn,
+    #decoy-btn {
+      pointer-events: auto;
+    }
+
+    #cam-label {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+    }
+
+    #rec-wrap {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      color: red;
+    }
+
+    #rec-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: red;
+      border-radius: 50%;
+      margin-right: 5px;
+      animation: rec-blink 1s infinite;
+    }
+
+    @keyframes rec-blink {
+
+      0%,
+      50% {
+        opacity: 1;
+      }
+
+      51%,
+      100% {
+        opacity: 0;
+      }
+    }
+
+    #pan-bar {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      right: 180px;
+      height: 4px;
+      background: #333;
+    }
+
+    #pan-ind {
+      height: 100%;
+      width: 20px;
+      background: #00ff50;
+      transition: left 0.1s;
+    }
+
+    #zoom-btn.visible {
+      opacity: 1;
+    }
+
+    #zoom-btn:hover {
+      background: #00ff50;
+      color: #000;
+    }
+
+    #zoom-btn {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: none;
+      border: 2px solid #00ff50;
+      color: #00ff50;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      font-weight: bold;
+    }
+
+    /* Decoy Button */
+    #decoy-btn {
+      position: absolute;
+      bottom: 10px;
+      right: 200px;
+      background: none;
+      border: 2px solid #ff3333;
+      color: #ff3333;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: bold;
+      transition: all 0.2s;
+      opacity: 0;
+    }
+
+    #decoy-btn.visible {
+      opacity: 1;
+    }
+
+    #decoy-btn:hover:not(:disabled) {
+      background: #ff3333;
+      color: #000;
+    }
+
+    #decoy-btn:active:not(:disabled) {
+      transform: scale(0.95);
+    }
+
+    #decoy-btn:disabled {
+      opacity: 0.4;
+      border-color: #555;
+      color: #555;
+      cursor: not-allowed;
+    }
+
+    /* Honk Button */
+    #honk-btn {
+      position: absolute;
+      bottom: 10px;
+      right: 100px;
+      background: none;
+      border: 2px solid #ffaa00;
+      color: #ffaa00;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: bold;
+      transition: all 0.2s;
+      opacity: 0;
+    }
+
+    #honk-btn.visible {
+      opacity: 1;
+    }
+
+    #honk-btn:hover {
+      background: #ffaa00;
+      color: #000;
+    }
+
+    #honk-btn:active {
+      transform: scale(0.95);
+    }
+
+    #honk-btn.cooldown {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* HUD */
+    #hud {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 1;
+      color: #00ff50;
+      font-family: 'Courier New', monospace;
+      text-shadow: 0 0 10px #00ff50;
+    }
+
+    #hud-night {
+      font-size: 24px;
+      margin-bottom: 5px;
+    }
+
+    #hud-hour {
+      font-size: 18px;
+    }
+
+    #hud-bar {
+      width: 200px;
+      height: 6px;
+      background: #333;
+      margin-top: 10px;
+    }
+
+    #hud-fill {
+      height: 100%;
+      width: 0%;
+      background: #00ff50;
+      transition: width 1s linear;
+    }
+
+    #rage-hud {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #ff3333;
+      text-shadow: 0 0 8px #ff3333;
+      font-weight: bold;
+    }
+
+    #rage-bar-wrapper {
+      width: 200px;
+      height: 8px;
+      background: #333;
+      margin-top: 5px;
+      border: 1px solid #ff3333;
+    }
+
+    #rage-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: #ff3333;
+      transition: width 0.5s linear;
+      box-shadow: 0 0 10px #ff3333;
+    }
+
+    /* Screenshots counter */
+    #screenshots-hud {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 1;
+      color: #00ff50;
+      font-family: 'Courier New', monospace;
+      text-shadow: 0 0 10px #00ff50;
+      font-size: 16px;
+    }
+
+    /* Ghost Timer */
+    #ghost-timer {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 100;
+      color: #ff3333;
+      font-family: 'Courier New', monospace;
+      font-size: 72px;
+      font-weight: bold;
+      text-shadow: 0 0 30px #ff3333, 0 0 60px #ff0000;
+      animation: ghost-timer-pulse 1s infinite;
+      pointer-events: none;
+    }
+
+    @keyframes ghost-timer-pulse {
+
+      0%,
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+        text-shadow: 0 0 30px #ff3333, 0 0 60px #ff0000;
+      }
+
+      50% {
+        transform: translate(-50%, -50%) scale(1.1);
+        text-shadow: 0 0 50px #ff3333, 0 0 100px #ff0000, 0 0 150px #ff0000;
+      }
+    }
+
+    /* Toggle button (fixed pixel layout — proportions from backup.html) */
+    #toggle-btn {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: none;
+      border: 2px solid #00ff50;
+      color: #00ff50;
+      padding: 12px 24px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 16px;
+      z-index: 5;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+
+    #toggle-btn:hover {
+      background: #00ff50;
+      color: #000;
+    }
+
+    /* Panel with SVG map (fixed pixel layout — proportions from backup.html) */
+    #panel {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.9);
+      border: 2px solid #00ff50;
+      padding: 15px;
+      color: #00ff50;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      z-index: 4;
+      display: none;
+      box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.8);
+    }
+
+    #panel.visible {
+      display: block;
+    }
+
+    #panel-title {
+      margin-bottom: 15px;
+      text-align: center;
+      font-size: 16px;
+    }
+
+    #map-svg {
+      width: 650px;
+      height: 220px;
+    }
+
+    /* Camera nodes in SVG */
+    .cam-node {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #111;
+      border: 3px solid #00ff50;
+      color: #00ff50;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      font-weight: bold;
+    }
+
+    .cam-node:hover {
+      background: #00ff50;
+      color: #000;
+      transform: scale(1.05);
+    }
+
+    .cam-node.active {
+      background: #00ff50;
+      color: #000;
+      box-shadow: 0 0 10px #00ff50;
+    }
+
+    .cam-node .shortcut {
+      position: absolute;
+      bottom: 1px;
+      right: 3px;
+      font-size: 9px;
+      opacity: 0.7;
+    }
+
+    /* YOU indicator */
+    .you-node {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #1a0a0a;
+      border: 3px solid #ff3333;
+      color: #ff3333;
+      font-size: 11px;
+      font-weight: bold;
+      text-shadow: 0 0 8px #ff3333;
+      animation: you-pulse 2s infinite;
+    }
+
+    @keyframes you-pulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 5px #ff3333;
+      }
+
+      50% {
+        box-shadow: 0 0 15px #ff3333, 0 0 25px #ff0000;
+      }
+    }
+
+    /* Survived screen */
+    #survived {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      color: #00ff50;
+      font-family: 'Courier New', monospace;
+      font-size: 48px;
+      text-shadow: 0 0 20px #00ff50;
+      z-index: 9;
+    }
+
+    #survived span {
+      animation: survived-pulse 2s infinite;
+    }
+
+    @keyframes survived-pulse {
+
+      0%,
+      50% {
+        opacity: 1;
+      }
+
+      51%,
+      100% {
+        opacity: 0.3;
+      }
+    }
+
+    /* Electricity Mechanics */
+    #elec-trigger {
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 30px;
+      height: 100px;
+      padding-right: 5px;
+      background: rgba(30, 30, 30, 0.8);
+      border: 2px solid #00ff50;
+      border-left: none;
+      border-radius: 0 10px 10px 0;
+      color: #00ff50;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      cursor: pointer;
+      font-size: 20px;
+      z-index: 10;
+      transition: all 0.3s ease;
+      opacity: 0;
+      pointer-events: none;
+      /* Only visible in lobby */
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    #elec-trigger.visible {
+      opacity: 0.5;
+      pointer-events: auto;
+    }
+
+    #elec-trigger.visible:hover {
+      opacity: 1;
+      background: #00ff50;
+      border-color: #00ff50;
+      width: 280px;
+      color: #000;
+    }
+
+    #elec-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(2px);
+      z-index: 20;
+      color: #fff;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      font-family: 'Courier New', monospace;
+    }
+
+    #elec-overlay.visible {
+      display: flex;
+    }
+
+    #elec-header {
+      font-size: 24px;
+      color: #ffaa00;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #ffaa00;
+      padding-bottom: 10px;
+      width: 80%;
+      max-width: 500px;
+      text-align: center;
+    }
+
+    #elec-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 25px;
+      width: 80%;
+      max-width: 500px;
+    }
+
+    #elec-status {
+      color: #ff3333;
+      font-size: 18px;
+      text-align: center;
+      font-weight: bold;
+      text-shadow: 0 0 10px #ff3333;
+    }
+
+    #elec-loading-bar {
+      width: 100%;
+      height: 40px;
+      background: #222;
+      border: 3px solid #ff3333;
+      border-radius: 5px;
+      overflow: hidden;
+      position: relative;
+      display: none;
+    }
+
+    #elec-loading-bar.visible {
+      display: block;
+    }
+
+    #elec-loading-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #ff3333, #ff6666, #ff3333);
+      background-size: 200% 100%;
+      animation: loading-gradient 1s linear infinite;
+      box-shadow: 0 0 20px #ff3333;
+      transition: width 0.05s linear;
+    }
+
+    @keyframes loading-gradient {
+      0% {
+        background-position: 0% 50%;
+      }
+      100% {
+        background-position: 200% 50%;
+      }
+    }
+
+    #elec-reset-btn {
+      padding: 15px 40px;
+      background: none;
+      border: 3px solid #00ff50;
+      color: #00ff50;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    #elec-reset-btn:hover:not(:disabled) {
+      background: #00ff50;
+      color: #000;
+      transform: scale(1.05);
+    }
+
+    #elec-reset-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      border-color: #555;
+      color: #555;
+    }
+
+    #vent-close-btn {
+      padding: 15px 40px;
+      background: none;
+      border: 3px solid #ffaa00;
+      color: #ffaa00;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    #vent-close-btn:hover:not(:disabled) {
+      background: #ffaa00;
+      color: #000;
+      transform: scale(1.05);
+    }
+
+    #vent-close-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    #vent-close-btn.closed {
+      border-color: #ff3333;
+      color: #ff3333;
+    }
+
+    #vent-close-btn.closed:hover:not(:disabled) {
+      background: #ff3333;
+      color: #000;
+    }
+
+    #elec-close {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background: none;
+      border: 2px solid #fff;
+      color: #fff;
+      cursor: pointer;
+      font-size: 16px;
+      font-family: inherit;
+    }
+
+    #elec-close:hover {
+      background: #fff;
+      color: #000;
+    }
+
+    #notes-btn {
+      padding: 15px 40px;
+      background: none;
+      border: 3px solid #ffdd00;
+      color: #ffdd00;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    #notes-btn:hover {
+      background: #ffdd00;
+      color: #000;
+      transform: scale(1.05);
+    }
+
+    #notes-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.92);
+      z-index: 30;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      font-family: 'Courier New', monospace;
+    }
+
+    #notes-overlay.visible {
+      display: flex;
+    }
+
+    #notes-header {
+      font-size: 22px;
+      color: #ffdd00;
+      text-shadow: 0 0 10px #ffdd00;
+      letter-spacing: 3px;
+    }
+
+    #notes-textarea {
+      width: 420px;
+      height: 260px;
+      background: #0a0a0a;
+      border: 2px solid #ffdd00;
+      color: #ffdd00;
+      font-family: 'Courier New', monospace;
+      font-size: 18px;
+      padding: 15px;
+      resize: none;
+      outline: none;
+      box-shadow: 0 0 15px rgba(255, 221, 0, 0.15);
+      line-height: 1.6;
+    }
+
+    #notes-textarea::placeholder {
+      color: rgba(255, 221, 0, 0.3);
+    }
+
+    #notes-close {
+      padding: 10px 30px;
+      background: none;
+      border: 2px solid #fff;
+      color: #fff;
+      cursor: pointer;
+      font-size: 16px;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    #notes-close:hover {
+      background: #fff;
+      color: #000;
+    }
+
+    /* Oxygen Meter */
+    #oxygen-hud {
+      position: absolute;
+      bottom: 50px;
+      left: 20px;
+      z-index: 1;
+      color: #00aaff;
+      font-family: 'Courier New', monospace;
+      text-shadow: 0 0 10px #00aaff;
+    }
+
+    #oxygen-label {
+      font-size: 18px;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+
+    #oxygen-bar-wrapper {
+      width: 200px;
+      height: 30px;
+      background: #222;
+      border: 2px solid #00aaff;
+      border-radius: 5px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #oxygen-bar-fill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #00aaff, #0088cc);
+      transition: width 0.3s linear, background 0.3s;
+      box-shadow: 0 0 10px #00aaff;
+    }
+
+    #oxygen-bar-fill.low {
+      background: linear-gradient(90deg, #ffaa00, #ff8800);
+      box-shadow: 0 0 10px #ffaa00;
+    }
+
+    #oxygen-bar-fill.critical {
+      background: linear-gradient(90deg, #ff3333, #cc0000);
+      box-shadow: 0 0 10px #ff3333;
+      animation: oxygen-pulse 0.5s infinite;
+    }
+
+    @keyframes oxygen-pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.6;
+      }
+    }
+
+    /* Screamer / Hide Scene */
+    #screamer-scene {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 200;
+      display: none;
+      background: #000;
+    }
+
+    #screamer-scene.visible {
+      display: block;
+    }
+
+    #screamer-office {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    #officestein-img {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      top: 0;
+      right: 0;
+      display: none;
+    }
+
+    #spam-text {
+      position: absolute;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #ff3333;
+      font-size: 48px;
+      font-family: 'Courier New', monospace;
+      text-shadow: 0 0 30px #ff3333, 0 0 60px #ff0000;
+      letter-spacing: 4px;
+      display: none;
+      animation: pulse-glow 0.8s infinite;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    #spam-timer {
+      position: absolute;
+      top: 52%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #ffdd00;
+      font-size: 64px;
+      font-family: 'Courier New', monospace;
+      text-shadow: 0 0 30px #ffdd00, 0 0 60px #ff8800;
+      display: none;
+      animation: pulse-glow 0.8s infinite;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    @keyframes pulse-glow {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+
+      50% {
+        opacity: 0.7;
+        transform: translate(-50%, -50%) scale(1.05);
+      }
+    }
+
+    #fullscreen-static {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 250;
+      display: none;
+      background: #000;
+      animation: static-noise-fullscreen 0.05s infinite;
+    }
+
+    #fullscreen-static.visible {
+      display: block;
+    }
+
+    @keyframes static-noise-fullscreen {
+      0% {
+        background: #111;
+        filter: brightness(0.2) contrast(3) saturate(0);
+      }
+
+      20% {
+        background: #222;
+        filter: brightness(0.3) contrast(2.5) saturate(0);
+      }
+
+      40% {
+        background: #0a0a0a;
+        filter: brightness(0.15) contrast(3.5) saturate(0);
+      }
+
+      60% {
+        background: #1a1a1a;
+        filter: brightness(0.25) contrast(3) saturate(0);
+      }
+
+      80% {
+        background: #050505;
+        filter: brightness(0.1) contrast(4) saturate(0);
+      }
+
+      100% {
+        background: #111;
+        filter: brightness(0.2) contrast(3) saturate(0);
+      }
+    }
+
+    @keyframes screen-vibrate {
+      0% {
+        transform: translate(0, 0) rotate(0deg);
+      }
+
+      10% {
+        transform: translate(-4px, 2px) rotate(-0.3deg);
+      }
+
+      20% {
+        transform: translate(4px, -3px) rotate(0.3deg);
+      }
+
+      30% {
+        transform: translate(-3px, 4px) rotate(-0.2deg);
+      }
+
+      40% {
+        transform: translate(3px, -2px) rotate(0.2deg);
+      }
+
+      50% {
+        transform: translate(-2px, 3px) rotate(-0.3deg);
+      }
+
+      60% {
+        transform: translate(2px, -4px) rotate(0.1deg);
+      }
+
+      70% {
+        transform: translate(-4px, 2px) rotate(-0.2deg);
+      }
+
+      80% {
+        transform: translate(3px, 3px) rotate(0.2deg);
+      }
+
+      90% {
+        transform: translate(-3px, -2px) rotate(-0.1deg);
+      }
+
+      100% {
+        transform: translate(0, 0) rotate(0deg);
+      }
+    }
+
+    #screamer-scene.shaking {
+      animation: screen-vibrate 0.12s infinite;
+    }
+
+    #hide-scene {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 200;
+      display: none;
+      background: #000;
+    }
+
+    #hide-scene.visible {
+      display: block;
+    }
+
+    #hide-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    #walker {
+      position: absolute;
+      height: 150%;
+      /* fits from floor to above bed frame due to transparency */
+      bottom: 0%;
+      /* on the floor */
+      transition: none;
+      z-index: 10;
+      image-rendering: auto;
+      /* smoother scaling at large size */
+    }
+
+    #jumpscare-final {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.1);
+      width: 100%;
+      height: 100%;
+      z-index: 300;
+      display: none;
+      object-fit: cover;
+      transition: transform 0.1s ease-in;
+      /* faster snap */
+      transform-origin: center 20%;
+      /* target the face as seen in example.png */
+    }
+
+    /* Flash stun overlay */
+    #stun-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #fff;
+      opacity: 0.95;
+      z-index: 50;
+      display: none;
+      pointer-events: none;
+    }
+
+    #controls-hint {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      z-index: 1;
+      color: #00ff50;
+      font-size: 12px;
+      opacity: 0.6;
+    }
+
+    /* Fade to black transition */
+    #fade-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 199;
+      transition: opacity 0.5s ease-in-out;
+    }
+
+    #fade-overlay.fade-in {
+      opacity: 1;
+    }
+
+    /* Responsive scaling is handled by the #stage transform at runtime —
+       no media queries needed: the entire 1920x1080 canvas scales as one. */
+
+    /* ── Computer / Terminal ─────────────────────────────────────────────── */
+    #computer-power-btn {
+      position: absolute;
+      left: 360px;
+      top:  445px;
+      background: none;
+      border: 1px solid #00ff50;
+      color: #00ff50;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      font-weight: bold;
+      padding: 4px 10px;
+      cursor: pointer;
+      z-index: 6;
+      transition: background 0.2s, color 0.2s;
+      text-shadow: 0 0 6px #00ff50;
+      box-shadow: 0 0 6px rgba(0,255,80,0.3);
+    }
+
+    #computer-power-btn:hover {
+      background: #00ff50;
+      color: #000;
+    }
+
+    #computer-power-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    #computer-boot {
+      position: absolute;
+      left: 330px;
+      top: 472px;
+      width: 200px;
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      z-index: 6;
+    }
+
+    #computer-boot.visible { display: flex; }
+
+    #computer-boot-bar-wrap {
+      width: 100%;
+      height: 6px;
+      background: #111;
+      border: 1px solid #00ff50;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    #computer-boot-bar {
+      height: 100%;
+      width: 0%;
+      background: #00ff50;
+      box-shadow: 0 0 6px #00ff50;
+      transition: width 0.05s linear;
+    }
+
+    #computer-boot-label {
+      color: #00ff50;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      text-align: center;
+      text-shadow: 0 0 4px #00ff50;
+    }
+
+    /* Invisible clickable zone — covers the full monitor screen square */
+    #computer-screen-zone {
+      position: absolute;
+      left: 154px;
+      top:  432px;
+      width: 345px;
+      height: 270px;
+      cursor: pointer;
+      z-index: 6;
+      display: none;
+    }
+
+    #computer-screen-zone.ready {
+      display: block;
+    }
+
+    /* Terminal popup */
+    #computer-terminal {
+      position: absolute;
+      left: 520px;
+      top: 380px;
+      width: 340px;
+      background: #050f05;
+      border: 2px solid #00ff50;
+      box-shadow: 0 0 30px rgba(0,255,80,0.25);
+      font-family: 'Courier New', monospace;
+      color: #00ff50;
+      padding: 18px 20px 14px;
+      z-index: 50;
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    #computer-terminal.visible { display: flex; }
+
+    #terminal-header {
+      font-size: 13px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      border-bottom: 1px solid #00ff50;
+      padding-bottom: 8px;
+      text-shadow: 0 0 8px #00ff50;
+    }
+
+    #terminal-inputs {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #terminal-inputs label {
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #terminal-inputs input {
+      width: 70px;
+      background: #000;
+      border: 1px solid #00ff50;
+      color: #00ff50;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      padding: 4px 8px;
+      outline: none;
+      text-align: center;
+    }
+
+    #terminal-inputs input:focus {
+      box-shadow: 0 0 6px #00ff50;
+    }
+
+    /* hide number spinners */
+    #terminal-inputs input::-webkit-outer-spin-button,
+    #terminal-inputs input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    #terminal-inputs input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+
+    #terminal-compute {
+      background: none;
+      border: 2px solid #00ff50;
+      color: #00ff50;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      font-weight: bold;
+      padding: 7px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    #terminal-compute:hover {
+      background: #00ff50;
+      color: #000;
+    }
+
+    #terminal-output {
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+      min-height: 28px;
+      text-shadow: 0 0 10px #00ff50;
+      letter-spacing: 2px;
+    }
+
+    #terminal-close {
+      background: none;
+      border: 1px solid rgba(0,255,80,0.4);
+      color: rgba(0,255,80,0.6);
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      padding: 5px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    #terminal-close:hover {
+      border-color: #00ff50;
+      color: #00ff50;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- Fixed 1920x1080 design stage — uniformly scaled at runtime to fit any viewport. -->
+<div id="stage">
+
+  <!-- Loading Screen -->
+  <div id="loader">
+    <h2>BIG STEIN ISLAND</h2>
+    <p id="load-txt">Initializing surveillance systems…</p>
+    <div id="loader-bar-wrap">
+      <div id="loader-bar"></div>
+    </div>
+  </div>
+
+  <!-- Lobby Screen -->
+  <div id="lobby">
+    <img id="lobby-bg" src="assets/photos/lobby.png" alt="Lobby">
+    <div id="lobby-content">
+      <img id="bigstein-img" src="assets/photos/bigstein.jpeg" alt="Big Stein">
+      <div id="lobby-right">
+        <h1 id="lobby-title">NIGHT SHIFT</h1>
+        <button id="start-btn">START</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Storyline Screen -->
+  <div id="storyline">
+    <img id="storyline-bg" src="assets/photos/storylinebackround.png" alt="Background">
+    <div id="story-box">
+      <button id="skip-btn">SKIP →</button>
+      <p id="story-text"></p>
+      <div id="story-buttons"></div>
+    </div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover">
+    <h1>GAME OVER</h1>
+    <p id="gameover-reason">You failed to capture enough screenshots.</p>
+    <button id="retry-btn">TRY AGAIN</button>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game">
+    <img id="room-bg" src="assets/photos/room.png" alt="Room background">
+
+    <!-- Camera viewport -->
+    <div id="cam-wrap">
+      <canvas id="cam-canvas"></canvas>
+      <div id="static-overlay"></div>
+      <div id="cam-ui">
+        <div id="cam-label">CAM 1</div>
+        <div id="rec-wrap">
+          <div id="rec-dot"></div>REC
+        </div>
+        <div id="pan-bar">
+          <div id="pan-ind"></div>
+        </div>
+        <button id="decoy-btn">📯 DECOY (3)</button>
+        <button id="honk-btn">🔊 HONK</button>
+        <button id="zoom-btn">⊕ ZOOM</button>
+      </div>
+    </div>
+
+    <!-- HUD -->
+    <div id="hud">
+      <div id="hud-night">NIGHT 1</div>
+      <div id="rage-hud">
+        RAGE LEVEL
+        <div id="rage-bar-wrapper">
+          <div id="rage-bar-fill"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Oxygen Meter -->
+    <div id="oxygen-hud">
+      <div id="oxygen-label">OXYGEN: <span id="oxygen-percent-text">100%</span></div>
+      <div id="oxygen-bar-wrapper">
+        <div id="oxygen-bar-fill"></div>
+      </div>
+    </div>
+
+    <div id="screenshots-hud">SCREENSHOTS: 0/4</div>
+
+    <!-- Ghost Timer -->
+    <div id="ghost-timer" style="display: none;">20.000</div>
+
+    <div id="controls-hint">
+      [1-9] Switch Cams | [10][11] Quick press | [←→↑↓] Pan | [S] Screenshot | [H] Honk    </div>
+
+    <div id="stun-overlay"></div>
+
+    <div id="fade-overlay"></div>
+
+    <button id="toggle-btn">▲ CAMERAS</button>
+
+    <div id="elec-trigger">CONTROL PANEL &nbsp; ▶</div>
+
+    <div id="elec-overlay">
+      <div id="elec-header">CONTROL PANEL</div>
+      <div id="elec-content">
+        <div id="elec-status">CAMERAS OFFLINE</div>
+        <div id="elec-loading-bar">
+          <div id="elec-loading-fill"></div>
+        </div>
+        <button id="elec-reset-btn">RESET ALL CAMERAS</button>
+        <button id="vent-close-btn">CLOSE VENTS</button>
+        <button id="notes-btn">📝 NOTES</button>
+      </div>
+      <button id="elec-close">RETURN</button>
+    </div>
+
+    <!-- Notes overlay -->
+    <div id="notes-overlay">
+      <div id="notes-header">── NOTES ──</div>
+      <textarea id="notes-textarea" placeholder="Write down numbers and clues here..."></textarea>
+      <button id="notes-close">CLOSE</button>
+    </div>
+
+    <!-- Computer terminal on desk -->
+    <!-- Power button sits just above the monitor (~17% from left, ~26% from top of 1920x1080) -->
+    <button id="computer-power-btn">⏻ POWER</button>
+
+    <!-- Boot progress bar (appears under power button while booting) -->
+    <div id="computer-boot">
+      <div id="computer-boot-bar-wrap">
+        <div id="computer-boot-bar"></div>
+      </div>
+      <div id="computer-boot-label">BOOTING...</div>
+    </div>
+
+    <!-- Clickable monitor screen zone (active only when ready) -->
+    <div id="computer-screen-zone"></div>
+
+    <!-- Terminal popup -->
+    <div id="computer-terminal">
+      <div id="terminal-header">▌TERMINAL v1.0 — ENTER DIGITS</div>
+      <div id="terminal-inputs">
+        <label>A: <input id="terminal-a" type="number" min="1" max="20" placeholder="?"></label>
+        <label>B: <input id="terminal-b" type="number" min="1" max="20" placeholder="?"></label>
+        <label>C: <input id="terminal-c" type="number" min="1" max="20" placeholder="?"></label>
+      </div>
+      <button id="terminal-compute">COMPUTE</button>
+      <div id="terminal-output"></div>
+      <button id="terminal-close">CLOSE</button>
+    </div>
+
+    <!-- Panel with SVG map -->
+    <div id="panel">
+      <div id="panel-title">── SECURITY CAMERAS ──</div>
+      <svg id="map-svg" viewBox="0 0 650 220" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+
+    <div id="survived">
+      <span>YOU WON</span>
+      <p style="font-size:24px;margin-top:20px;">5 AM — You survived the night</p>
+    </div>
+  </div>
+
+  <!-- Screamer Scene -->
+  <div id="screamer-scene">
+    <img id="screamer-office" src="assets/photos/room.png" alt="Office">
+    <img id="officestein-img" src="assets/photos/officestein.png" alt="Office Stein">
+    <div id="spam-text">SPAM SPACE BAR TO HIDE</div>
+    <div id="spam-timer">5.000</div>
+  </div>
+
+  <!-- Fullscreen Static Overlay -->
+  <div id="fullscreen-static"></div>
+
+  <!-- Hide Scene -->
+  <div id="hide-scene">
+    <img id="hide-bg" src="assets/photos/hide.png" alt="Hiding">
+    <img id="walker" src="assets/photos/walkingright.png" alt="Walker" style="display:none;">
+  </div>
+
+  <img id="jumpscare-final" src="assets/photos/example.png" alt="Jumpscare">
+
+</div><!-- /#stage -->
+
+  <!-- Audio -->
+  <audio id="churchbell-audio" src="assets/sounds/churchbell.mp3" preload="auto"></audio>
+  <audio id="honk-audio" src="assets/sounds/honk.mp3" preload="auto"></audio>
+  <audio id="background-audio" src="assets/sounds/backround noise.mp3" preload="auto" loop></audio>
+  <audio id="jumpscare-audio" src="assets/sounds/jumpscare.mp3" preload="auto"></audio>
+  <audio id="screenshot-audio" src="assets/sounds/screenshot.mp3" preload="auto"></audio>
+  <audio id="cctvlag-audio" src="assets/sounds/cctvlag.mp3" preload="auto"></audio>
+  <audio id="buttonsfx-audio" src="assets/sounds/buttonsfx.mp3" preload="auto"></audio>
+  <audio id="zoomin-audio" src="assets/sounds/zoomin.mp3" preload="auto"></audio>
+  <audio id="zoomout-audio" src="assets/sounds/zoomout.mp3" preload="auto"></audio>
+  <audio id="alarm-audio" src="assets/sounds/alarm.mp3" preload="auto" loop></audio>
+  <audio id="crawl-audio" src="assets/sounds/crawl.mp3" preload="auto"></audio>
+  <audio id="doorknocking-audio" src="assets/sounds/doorknocking.mp3" preload="auto"></audio>
+  <audio id="doorkick-audio" src="assets/sounds/doorkick.mp3" preload="auto"></audio>
+  <audio id="walkingsfx-audio" src="assets/sounds/walkingsound.mp3" preload="auto" loop></audio>
+  <audio id="heartbeat-audio" src="assets/sounds/heartbeat.mp3" preload="auto" loop></audio>
+
+  <script>
+    // ═══════════════════════════════════════════════════════════════════════════
+    // ASSET PATH RESOLVER
+    // Works whether files are in assets/photos & assets/sounds OR in the root.
+    // Call p(filename) for photos, s(filename) for sounds.
+    // ═══════════════════════════════════════════════════════════════════════════
+    const _photoBase = (function () {
+      const img = new Image();
+      img.src = 'assets/photos/room.png';
+      // We can't synchronously know if it loaded, so we probe via a flag set on error.
+      // Instead, use a simpler heuristic: check if the HTML src attributes already
+      // resolved (they were set before this script runs). We just expose both prefixes
+      // and let the browser pick via onerror fallback on each image load.
+      return 'assets/photos/';
+    })();
+
+    function p(file) { return 'assets/photos/' + file; }
+    function s(file) { return 'assets/sounds/' + file; }
+
+    // Fallback loader: tries assets/ path first, falls back to root on error
+    function loadImgWithFallback(imgEl, filename) {
+      imgEl.onerror = function () {
+        if (!imgEl.src.includes('assets/photos/')) return;
+        imgEl.onerror = null;
+        imgEl.src = filename;
+      };
+      imgEl.src = 'assets/photos/' + filename;
+    }
+
+    function loadAudioWithFallback(audioEl, filename) {
+      audioEl.onerror = function () {
+        if (!audioEl.src.includes('assets/sounds/')) return;
+        audioEl.onerror = null;
+        audioEl.src = filename;
+      };
+      audioEl.src = 'assets/sounds/' + filename;
+    }
+
+    // Helper: set img src with assets/ prefix + root fallback
+    function setSrc(el, filename) {
+      if (!el) return;
+      el.onerror = function () {
+        if (!el.src.includes('assets/photos/')) return;
+        el.onerror = null;
+        el.src = filename;
+      };
+      el.src = 'assets/photos/' + filename;
+    }
+
+    // Patch all img/audio elements with assets/ paths to fall back to root
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('img[src]').forEach(function (el) {
+        const src = el.getAttribute('src');
+        if (!src || !src.startsWith('assets/photos/')) return;
+        const bare = src.replace('assets/photos/', '');
+        el.onerror = function () { el.onerror = null; el.src = bare; };
+      });
+      document.querySelectorAll('audio[src]').forEach(function (el) {
+        const src = el.getAttribute('src');
+        if (!src || !src.startsWith('assets/sounds/')) return;
+        const bare = src.replace('assets/sounds/', '');
+        el.onerror = function () { el.onerror = null; el.src = bare; };
+      });
+    });
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // STAGE SCALER — uniformly scale the 1920x1080 design surface to fit any
+    // viewport while preserving aspect ratio (letterboxed on non-16:9 screens).
+    // This guarantees that every element keeps its exact pixel proportions and
+    // relative positions no matter what size or aspect ratio the player's
+    // screen happens to be. Nothing ever overlaps or gets deformed.
+    // ═══════════════════════════════════════════════════════════════════════════
+    (function () {
+      const BASE_W = 1920;
+      const BASE_H = 1080;
+      const stage = document.getElementById('stage');
+
+      function fitStage() {
+        if (!stage) return;
+        const scale = Math.min(
+          window.innerWidth  / BASE_W,
+          window.innerHeight / BASE_H
+        );
+        stage.style.transform = 'translate(-50%, -50%) scale(' + scale + ')';
+        // Expose for any code that wants to convert viewport<->stage coords.
+        document.documentElement.style.setProperty('--game-scale', scale);
+      }
+
+      window.addEventListener('resize', fitStage, { passive: true });
+      window.addEventListener('orientationchange', fitStage, { passive: true });
+      // Re-fit once fonts/images settle and after load, just in case.
+      document.addEventListener('DOMContentLoaded', fitStage);
+      window.addEventListener('load', fitStage);
+      fitStage();
+    })();
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // STORYLINE DATA
+    // ═══════════════════════════════════════════════════════════════════════════
+    const STORYLINE = [
+      "Welcome to Big Stein Island. You've been hired as a night security operator to monitor the facility through CCTV cameras.",
+      "Your mission: capture 3 clear photographs — one of Big Stein, one of Trump (while roaming, not in a vent), and one of the Ghost — and survive until 5 AM. Use the S key to take screenshots when you spot them on the cameras.",
+      "Big Stein roams the facility freely. Switch between cameras using number keys [1-9] or click the camera map. Use ZOOM and arrow keys [←→↑↓] to pan around and spot him in dark corners.",
+      "WARNING: Taking a screenshot triggers a camera flash. Big Stein will notice and become hostile, moving toward your office. The more you provoke him, the faster he moves — watch the Rage Meter on your HUD.",
+      "You have limited defensive tools: HONK (H key) to lure him away from nearby cameras (85% success rate), and 📯 DECOY to reset his position completely (3 uses only). Use them wisely.",
+      "Big Stein's movements can overload the electrical grid, causing camera outages. If cameras go offline, use the CONTROL PANEL on the left. Click RESET ALL CAMERAS and wait 4 seconds for the system to reboot.",
+      "The CONTROL PANEL also has a CLOSE VENTS button. Closing vents can help, but your oxygen will drain at 1% every 0.5 seconds. If oxygen reaches 0%, you die. Open the vents before it's too late!",
+      "Something else lurks in the facility — a ghost. When a countdown timer appears on your screen, you have exactly 20 SECONDS to search through all cameras, find the ghost, and CLICK on it before time runs out. Failure means instant death.",
+      "There is a second threat: TRUMP. He will appear on a random camera and move around for a while before crawling into one of two vents — one between CAM 10 and your office, one between CAM 3 and your office.",
+      "Once Trump enters a vent, you dont have alot of time before he starts crawling. When you hear the crawl sound, open the CONTROL PANEL and hit CLOSE VENTS to stop him.",
+      "Lure Trump out of a vent using HONK — but only if you have spotted him in the vent first. Honk on the nearest camera to the vent that he's in to get him out.",
+      "If Trump reaches your room, hit [ESC] to exit cameras and hide [E].",
+      "Your real goal is survival. Stall Big Stein using every tool available. If you make it to 5 AM, you win.",
+      "Good luck, operator."
+    ];
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // CONFIG
+    // ═══════════════════════════════════════════════════════════════════════════
+    const REQUIRED_SCREENSHOTS = 3;
+    const BIGSTEIN_SPAWN_DELAY = 0; // seconds before Big Stein spawns
+    const PASSIVE_MOVE_DELAY = 20000; // 20 seconds before passive move
+    const AGGRESSIVE_STARE_TIME = 3000; // 3 seconds staring after screenshot
+    const STATIC_DURATION = 3000; // 3 seconds of static
+
+    // Cameras that Big Stein can spawn on (not 1,2,3,4)
+    const SPAWN_CAMERAS = [7, 8, 9, 10]; // CAM 8-11 (0-indexed)
+
+    // Ground zones for each camera (Y percentage range where Big Stein can walk)
+    const CAMERA_GROUND_ZONES = {
+      0: { minY: 65, maxY: 88 },  // CAM 1
+      1: { minY: 65, maxY: 88 },  // CAM 2
+      2: { minY: 65, maxY: 88 },  // CAM 3
+      3: { minY: 75, maxY: 92 },  // CAM 4 - aerial view, ground lower
+      4: { minY: 70, maxY: 90 },  // CAM 5 - corridor
+      5: { minY: 60, maxY: 85 },  // CAM 6 - bedroom
+      6: { minY: 70, maxY: 90 },  // CAM 7 - fancy room
+      7: { minY: 55, maxY: 88 },  // CAM 8 - staircase
+      8: { minY: 60, maxY: 85 },  // CAM 9 - bedroom
+      9: { minY: 70, maxY: 92 },  // CAM 10 - aerial
+      10: { minY: 60, maxY: 88 }  // CAM 11 - gate
+    };
+
+    // 11 cameras with PNG files
+    const CAMS = [
+      { name: "CAM 1",  file: "cam1.png",  zoom: { scale: 2 } },
+      { name: "CAM 2",  file: "cam2.png",  zoom: { scale: 2 } },
+      { name: "CAM 3",  file: "cam3.png",  zoom: { scale: 2 } },
+      { name: "CAM 4",  file: "cam4.png",  zoom: { scale: 2 } },
+      { name: "CAM 5",  file: "cam5.png",  zoom: { scale: 2 } },
+      { name: "CAM 6",  file: "cam6.png",  zoom: { scale: 2 } },
+      { name: "CAM 7",  file: "cam7.png",  zoom: { scale: 2 } },
+      { name: "CAM 8",  file: "cam8.png",  zoom: { scale: 2 } },
+      { name: "CAM 9",  file: "cam9.png",  zoom: { scale: 2 } },
+      { name: "CAM 10", file: "cam10.png", zoom: { scale: 2 } },
+      { name: "CAM 11", file: "cam11.png", zoom: { scale: 2 } },
+      { name: "VENT 1", file: "vent1.png", zoom: { scale: 2 }, noPan: true },
+      { name: "VENT 2", file: "vent2.png", zoom: { scale: 2 }, noPan: true }
+    ];
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // MAP LAYOUT - Based on your corridor diagram
+    // ═══════════════════════════════════════════════════════════════════════════
+    const NODE_W = 55, NODE_H = 28;
+
+    // Camera positions on map (matching your diagram)
+    const NODES = [
+      { i: 0, x: 80, y: 175 },   // CAM 1 (bottom left)
+      { i: 1, x: 80, y: 120 },   // CAM 2
+      { i: 2, x: 200, y: 120 },   // CAM 3
+      { i: 3, x: 200, y: 65 },    // CAM 4
+      { i: 4, x: 80, y: 65 },    // CAM 5
+      { i: 5, x: 80, y: 20 },    // CAM 6 (top left)
+      { i: 6, x: 200, y: 20 },    // CAM 7
+      { i: 7, x: 360, y: 65 },    // CAM 8
+      { i: 8, x: 360, y: 20 },    // CAM 9
+      { i: 9, x: 360, y: 120 },   // CAM 10
+      { i: 10, x: 480, y: 65 }     // CAM 11 (top right)
+    ];
+
+    // YOU position
+    const YOU_NODE = { x: 200, y: 190 };
+
+    // Corridor connections (edges between cameras)
+    const EDGES = [
+      [0, 1],   // CAM 1 - CAM 2
+      [1, 2],   // CAM 2 - CAM 3
+      [2, 3],   // CAM 3 - CAM 4
+      [3, 4],   // CAM 4 - CAM 5
+      [4, 5],   // CAM 5 - CAM 6
+      [5, 6],   // CAM 6 - CAM 7
+      [3, 6],   // CAM 4 - CAM 7
+      [3, 7],   // CAM 4 - CAM 8
+      [6, 8],   // CAM 7 - CAM 9
+      [7, 8],   // CAM 8 - CAM 9
+      [7, 9],   // CAM 8 - CAM 10
+      [7, 10],  // CAM 8 - CAM 11
+      [4, 1],   // CAM 5 - CAM 2 (NEW CORRIDOR)
+    ];
+
+    // Edges to YOU (player location)
+    const YOU_EDGES = [
+      { from: 0 },  // CAM 1 connects to YOU
+      { from: 2 },  // CAM 3 connects to YOU
+      { from: 9 },  // CAM 10 connects to YOU
+    ];
+
+    // Adjacency list for pathfinding
+    const ADJACENCY = {
+      0: [1],           // CAM 1 -> CAM 2
+      1: [0, 4],        // CAM 2 -> CAM 1, CAM 5
+      2: [3],           // CAM 3 -> CAM 4 (dead end, not on aggressive path)
+      3: [6],           // CAM 4 -> CAM 7
+      4: [1, 5],        // CAM 5 -> CAM 2, CAM 6
+      5: [4, 6],        // CAM 6 -> CAM 5, CAM 7
+      6: [5, 7],        // CAM 7 -> CAM 6 (closer), CAM 8 (farther)
+      7: [6, 8, 9, 10], // CAM 8 -> CAM 7 (closer), CAM 9/10/11 (farther)
+      8: [7],           // CAM 9 -> CAM 8
+      9: [7],           // CAM 10 -> CAM 8
+      10: [7]           // CAM 11 -> CAM 8
+    };
+
+    // Distance to YOU — lower = closer to player office
+    // Aggressive path: CAM9/10/11(7) -> CAM8(6) -> CAM7(5) -> CAM6(4) -> CAM5(3) -> CAM2(2) -> CAM1(1)
+    const DISTANCE_TO_YOU = {
+      0: 1,   // CAM 1  — final stop before office
+      1: 2,   // CAM 2
+      2: 99,  // CAM 3  — dead end, never on aggressive path
+      3: 5,   // CAM 4  — side branch off CAM 7
+      4: 3,   // CAM 5
+      5: 4,   // CAM 6
+      6: 5,   // CAM 7
+      7: 6,   // CAM 8
+      8: 7,   // CAM 9
+      9: 7,   // CAM 10
+      10: 7   // CAM 11
+    };
+
+    // Movement speed for each camera transition (in milliseconds)
+    // All transitions: flat 12 seconds
+    const MOVE_SPEED_BASE = { 'default': 12000 };
+
+    function getMoveSpeed(fromCam, toCam) {
+      return MOVE_SPEED_BASE['default'];
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // GAME STATE
+    // ═══════════════════════════════════════════════════════════════════════════
+    let gameState = 'loading'; // loading, lobby, storyline, game
+    let camPower = Array(13).fill('ON'); // 11 regular cameras + 2 vents
+    let outageActive = false;
+    let outageTimeout = null;
+    const OUTAGE_COOLDOWN = 30000; // 30 seconds
+    
+    // Reset all cameras mechanic
+    let resetInProgress = false;
+    let resetStartTime = null;
+    let resetAnimationFrame = null;
+    const RESET_DURATION = 4000; // 4 seconds
+    
+    // Oxygen system
+    let oxygenLevel = 100; // 0-100%
+    let ventsOpen = true;
+    let oxygenInterval = null;
+    const OXYGEN_RATE = 1; // 1% per tick (both drain and refill)
+    const OXYGEN_INTERVAL = 500; // 0.5 seconds
+    let activeCam = 0;
+    let zoomed = false;
+    let currentZoomLevel = 0;
+    let targetZoomLevel = 0;
+    let camOpen = false;
+    let nightStart = null; // Timer starts on first screenshot
+    let survived = false;
+    let gameOver = false;
+    let screenshots = 0;
+    // Track which entities have been photographed
+    let capturedBigStein = false;
+    let capturedTrump = false;
+    let capturedGhost = false;
+    let storyIndex = 0;
+
+    // Camera pan state
+    let panX = 50;
+    let panY = 50;
+    const PAN_SPEED = 0.8;
+
+    // Key tracking
+    const keysPressed = { ArrowLeft: false, ArrowRight: false, ArrowUp: false, ArrowDown: false };
+
+    // Quick number input
+    let lastNumberKey = '';
+    let lastNumberTime = 0;
+    const QUICK_PRESS_DELAY = 300;
+
+    // Honk state
+    let honkCooldown = false;
+    const HONK_COOLDOWN_MS = 17000;
+    let decoyUses = 3;
+
+    // Player watching state
+    let playerOnCamSince = Date.now();
+    let lastActiveCam = 0;
+
+    // Big Stein state
+    const BIGSTEIN_STATE = {
+      IDLE: 'idle',
+      PASSIVE: 'passive',
+      AGGRESSIVE: 'aggressive'
+    };
+
+    let bigStein = {
+      state: BIGSTEIN_STATE.IDLE,
+      camera: -1,
+      x: 50,
+      y: 75,
+      targetX: 50,
+      targetY: 75,
+      speed: 0.02,
+      spawnTime: 0,
+      lastMoveTime: 0,
+      isInStatic: false,
+      aggressiveStareStart: 0,
+      hasBeenSeen: false,
+      firstSeenTime: 0,
+      moveCount: 0, // Track number of aggressive moves
+      lastMoveWasScreenshot: false, // Track if last move was triggered by screenshot
+      rageAccumulation: 0, // How many seconds taken off movement (max 5)
+      hasDoneFirstAggressiveMove: false,
+      visualVar: 0, // Store random chance per camera visit
+      useOfficestein: false, // 40% chance to use officestein instead of character
+      screenshotToggle: false // Toggle between character.png and officestein.png after screenshots
+    };
+
+    // Trump state
+    let trump = {
+      active: false,
+      camera: -1,
+      spawnTime: 0,
+      lastMoveTime: 0,
+      x: 50,
+      y: 75,
+      moveCount: 0, // Track number of camera moves
+      inVent: false, // Whether Trump is in a vent
+      ventNumber: 0, // Which vent (1 or 2)
+      ventEntryTime: 0, // When Trump entered the vent
+      crawlPlayed: false, // Whether crawl sound has been played
+      crawlStartTime: 0, // When crawl audio started
+      crawlTimeout: null, // Timeout handle for reaching the room
+      seenInVent: false, // Whether player has spotted Trump in the vent
+      ventStaticActive: false, // Whether vent cam should show static (crawling)
+      isBluffMode: false, // Second visit — bluff crawl before real vent
+      bluffCrawlPlayed: false, // Whether the fake crawl has been played
+      inRoom: false, // Whether Trump has reached the room
+      roomChallengeActive: false, // Whether the 3-second hide window is running
+      roomChallengeTimeout: null  // Timeout handle for the hide window
+    };
+
+    const TRUMP_SPAWN_DELAY = 80; // 1 minute 20 seconds after Big Stein spawns
+    const TRUMP_MOVE_INTERVAL = 10000; // 10 seconds
+    const TRUMP_CAMERAS = [4, 5, 6, 7, 8, 9, 10]; // Cameras 5-11 (indices 4-10)
+    const TRUMP_MOVES_BEFORE_VENT = 4; // Number of moves before entering vent
+    const TRUMP_VENT_WAIT_TIME = 25000; // 25 seconds in vent before crawling
+    const TRUMP_CRAWL_DURATION = 9300; // 9.3 seconds crawl sound
+
+    const imgs = new Array(CAMS.length).fill(null);
+    let bigSteinBackImg = null;
+    let bigSteinFrontImg = null;
+    let trumpImg = null;
+    let trumpVent1Img = null;
+    let trumpVent2Img = null;
+    let trumpRoomImg = null;
+    let trumpJumpscareImg = null;
+    let bigSteinInvertedImg = null;
+    let officesteinImg = null;
+    let ghostImg = null;
+    let churchBellAudio = null;
+    let alarmAudio = null;
+    let crawlAudio = null;
+    let doorKnockingAudio = null;
+    let doorKickAudio = null;
+    let walkingSfxAudio = null;
+    let heartbeatAudio = null;
+    let screamState = false; // true once screamer scene is active
+    let honkAudio = null;
+    let backgroundAudio = null;
+    let jumpscareAudio = null;
+    let screenshotAudio = null;
+    let cctvlagAudio = null;
+    let buttonsfxAudio = null;
+    let zoominAudio = null;
+    let zoomoutAudio = null;
+
+    // Ghost mechanic state
+    let ghostActive = false;
+    let ghostCamera = -1;
+    let ghostSpawnTime = 0;
+    let ghostTimeout = null;
+    let ghostCountdownInterval = null;
+    let ghostInterval = null;
+    let nextGhostSpawn = 15000; // 15 seconds
+    let ghostX = 50;
+    let ghostY = 50;
+
+    // ── Cue Numbers ────────────────────────────────────────────────────────────
+    // 3 random numbers (1-20) appear one by one on random cameras after Big Stein
+    // goes aggressive. First spawns 30s after aggressive, then every 30s after.
+    // Each number stays on its camera permanently once spawned.
+    const CUE_COUNT = 3;
+    const CUE_SPAWN_DELAY = 30000;  // 30s after aggressive before first cue
+    const CUE_SPAWN_INTERVAL = 30000; // 30s between each cue
+
+    let cueNumbers = [];       // array of { value, camera, x, y } — populated at game start
+    let cueSpawned = [];       // which cues are currently visible (bool per index)
+    let cueCollected = [];     // which cues have been clicked/collected by the player
+    let cueSpawnTimers = [];   // timeout handles
+    let cueNumbersEnabled = false; // only active after aggressive
+    let fileCamera = -1;       // which cam (1,3,5,6,7) the file is hidden on this game
+    let lastTripletKey = '';   // "A,B,C" of last used triplet — ensures variety across games
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // DOM REFS
+    // ═══════════════════════════════════════════════════════════════════════════
+    const loader = document.getElementById('loader');
+    const loadTxt = document.getElementById('load-txt');
+    const loaderBar = document.getElementById('loader-bar');
+
+    const lobby = document.getElementById('lobby');
+    const startBtn = document.getElementById('start-btn');
+
+    const storylineDiv = document.getElementById('storyline');
+    const storyText = document.getElementById('story-text');
+    const storyButtons = document.getElementById('story-buttons');
+    const skipBtn = document.getElementById('skip-btn');
+
+    const gameoverDiv = document.getElementById('gameover');
+    const gameoverReason = document.getElementById('gameover-reason');
+    const retryBtn = document.getElementById('retry-btn');
+
+    const gameDiv = document.getElementById('game');
+    const camWrap = document.getElementById('cam-wrap');
+    const camCanvas = document.getElementById('cam-canvas');
+    const ctx = camCanvas.getContext('2d');
+    const camLabel = document.getElementById('cam-label');
+    const panel = document.getElementById('panel');
+    const toggleBtn = document.getElementById('toggle-btn');
+    const panInd = document.getElementById('pan-ind');
+    const elecTrigger = document.getElementById('elec-trigger');
+    const elecOverlay = document.getElementById('elec-overlay');
+    const elecStatus = document.getElementById('elec-status');
+    const elecLoadingBar = document.getElementById('elec-loading-bar');
+    const elecLoadingFill = document.getElementById('elec-loading-fill');
+    const elecResetBtn = document.getElementById('elec-reset-btn');
+    const ventCloseBtn = document.getElementById('vent-close-btn');
+    const elecClose = document.getElementById('elec-close');
+    const oxygenBarFill = document.getElementById('oxygen-bar-fill');
+    const oxygenPercentText = document.getElementById('oxygen-percent-text');
+    const honkBtn = document.getElementById('honk-btn');
+    const decoyBtn = document.getElementById('decoy-btn');
+    const zoomBtn = document.getElementById('zoom-btn');
+    const mapSvg = document.getElementById('map-svg');
+    const survDiv = document.getElementById('survived');
+    const screenshotsHud = document.getElementById('screenshots-hud');
+    const finalScreenshots = document.getElementById('final-screenshots');
+    const staticOverlay = document.getElementById('static-overlay');
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // AUDIO FUNCTIONS
+    // ═══════════════════════════════════════════════════════════════════════════
+    function playButtonSfx() {
+      if (buttonsfxAudio) {
+        const clone = buttonsfxAudio.cloneNode();
+        clone.volume = 0.5;
+        clone.play().catch(() => { });
+      }
+    }
+
+    function playZoomSfx(isIn) {
+      const audioObj = isIn ? zoominAudio : zoomoutAudio;
+      if (audioObj) {
+        const clone = audioObj.cloneNode();
+        clone.play().catch(() => { });
+        setTimeout(() => clone.pause(), 500);
+      }
+    }
+
+    function playScreenshotSfx() {
+      if (screenshotAudio) {
+        screenshotAudio.currentTime = 0;
+        screenshotAudio.play().catch(() => { });
+      }
+    }
+
+    function playCctvLagSfx() {
+      if (cctvlagAudio) {
+        cctvlagAudio.currentTime = 0;
+        cctvlagAudio.play().catch(() => { });
+      }
+    }
+
+    function playChurchBell() {
+      if (churchBellAudio) {
+        churchBellAudio.currentTime = 0;
+        churchBellAudio.play().catch(() => { });
+      }
+    }
+
+    function stopAllAudio() {
+      if (churchBellAudio) {
+        churchBellAudio.pause();
+        churchBellAudio.currentTime = 0;
+      }
+      if (jumpscareAudio) {
+        jumpscareAudio.pause();
+        jumpscareAudio.currentTime = 0;
+      }
+      if (alarmAudio) {
+        alarmAudio.pause();
+        alarmAudio.currentTime = 0;
+      }
+    }
+
+    function startBackgroundMusic() {
+      if (backgroundAudio) {
+        backgroundAudio.volume = 0.3;
+        backgroundAudio.play().catch(() => {
+          document.addEventListener('click', function tryPlay() {
+            backgroundAudio.play().catch(() => { });
+            document.removeEventListener('click', tryPlay);
+          }, { once: true });
+        });
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // LOADING
+    // ═══════════════════════════════════════════════════════════════════════════
+    function loadAll() {
+      return new Promise(resolve => {
+        let done = 0;
+        const total = CAMS.length + 8;
+
+        function progress() {
+          done++;
+          const pct = (done / total * 100);
+          loaderBar.style.width = pct + '%';
+          loadTxt.textContent = `Loading assets… (${done}/${total})`;
+          if (done >= total) resolve();
+        }
+
+        CAMS.forEach((cam, i) => {
+          const img = new Image();
+          img.onload = () => { console.log(`Camera ${i + 1} loaded: ${cam.file}`); progress(); };
+          img.onerror = () => {
+            if (img.src.includes('assets/photos/')) {
+              img.onerror = () => { console.error(`FAILED to load camera ${i + 1}: ${cam.file}`); progress(); };
+              img.src = cam.file;
+            } else { console.error(`FAILED to load camera ${i + 1}: ${cam.file}`); progress(); }
+          };
+          img.src = 'assets/photos/' + cam.file;
+          imgs[i] = img;
+        });
+
+        function mkImg(filename, cb) {
+          const img = new Image();
+          img.onload = cb;
+          img.onerror = function() {
+            if (img.src.includes('assets/photos/')) { img.onerror = cb; img.src = filename; }
+            else cb();
+          };
+          img.src = 'assets/photos/' + filename;
+          return img;
+        }
+
+        // Load Big Stein images
+        bigSteinBackImg    = mkImg('backcharacter.png',  progress);
+        bigSteinFrontImg   = mkImg('character.png',      progress);
+        bigSteinInvertedImg= mkImg('bigsteininvert.png', progress);
+        officesteinImg     = mkImg('officestein.png',    progress);
+        trumpImg           = mkImg('trump.png',          progress);
+        trumpVent1Img      = mkImg('trumpvent1.png',     progress);
+        trumpVent2Img      = mkImg('trumpvent2.png',     progress);
+        trumpRoomImg       = mkImg('trumproom.png',      progress);
+        trumpJumpscareImg  = mkImg('trumpjumpscare.png', progress);
+        ghostImg           = mkImg('ghost.png',          progress);
+
+        const otherFiles = ['lobby.png', 'bigstein.jpeg', 'storylinebackround.png', 'room.png'];
+        otherFiles.forEach(f => mkImg(f, progress));
+
+        churchBellAudio = document.getElementById('churchbell-audio');
+        honkAudio = document.getElementById('honk-audio');
+        backgroundAudio = document.getElementById('background-audio');
+        jumpscareAudio = document.getElementById('jumpscare-audio');
+        screenshotAudio = document.getElementById('screenshot-audio');
+        cctvlagAudio = document.getElementById('cctvlag-audio');
+        buttonsfxAudio = document.getElementById('buttonsfx-audio');
+        zoominAudio = document.getElementById('zoomin-audio');
+        zoomoutAudio = document.getElementById('zoomout-audio');
+        alarmAudio = document.getElementById('alarm-audio');
+        crawlAudio = document.getElementById('crawl-audio');
+        doorKnockingAudio = document.getElementById('doorknocking-audio');
+        doorKickAudio = document.getElementById('doorkick-audio');
+        walkingSfxAudio = document.getElementById('walkingsfx-audio');
+        heartbeatAudio = document.getElementById('heartbeat-audio');
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // STORYLINE
+    // ═══════════════════════════════════════════════════════════════════════════
+    function showStoryline() {
+      gameState = 'storyline';
+      storylineDiv.classList.add('visible');
+      updateStorySlide();
+    }
+
+    function updateStorySlide() {
+      storyText.textContent = STORYLINE[storyIndex];
+      storyButtons.innerHTML = '';
+
+      // Show ghost image on the ghost explanation slide (index 7)
+      const storyBox = document.getElementById('story-box');
+      let ghostPreview = document.getElementById('ghost-preview');
+      
+      if (storyIndex === 7) {
+        // Create ghost preview if it doesn't exist
+        if (!ghostPreview) {
+          ghostPreview = document.createElement('img');
+          ghostPreview.id = 'ghost-preview';
+          ghostPreview.src = 'assets/photos/ghost.png';
+          ghostPreview.style.position = 'absolute';
+          ghostPreview.style.right = '-180px';
+          ghostPreview.style.top = '50%';
+          ghostPreview.style.transform = 'translateY(-50%)';
+          ghostPreview.style.width = '150px';
+          ghostPreview.style.height = 'auto';
+          ghostPreview.style.filter = 'drop-shadow(0 0 20px rgba(255, 51, 51, 0.8))';
+          ghostPreview.style.animation = 'ghost-float 3s ease-in-out infinite';
+          storyBox.appendChild(ghostPreview);
+        } else {
+          ghostPreview.style.display = 'block';
+        }
+      } else {
+        // Hide ghost preview on other slides
+        if (ghostPreview) {
+          ghostPreview.style.display = 'none';
+        }
+      }
+
+      const isLast = storyIndex === STORYLINE.length - 1;
+      const isFirst = storyIndex === 0;
+
+      if (!isFirst) {
+        const backBtn = document.createElement('button');
+        backBtn.className = 'story-btn';
+        backBtn.textContent = '← BACK';
+        backBtn.onclick = () => {
+          playButtonSfx();
+          storyIndex--;
+          updateStorySlide();
+        };
+        storyButtons.appendChild(backBtn);
+      }
+
+      const nextBtn = document.createElement('button');
+      nextBtn.className = 'story-btn primary';
+      if (isLast) {
+        nextBtn.textContent = "I'M READY, PLAY";
+        nextBtn.onclick = () => {
+          playButtonSfx();
+          startGame();
+        };
+      } else {
+        nextBtn.textContent = 'NEXT →';
+        nextBtn.onclick = () => {
+          playButtonSfx();
+          storyIndex++;
+          updateStorySlide();
+        };
+      }
+      storyButtons.appendChild(nextBtn);
+    }
+
+    function startGame() {
+      console.log('startGame: Starting game...');
+      stopAllAudio();
+      gameState = 'game';
+      storylineDiv.classList.remove('visible');
+      gameDiv.classList.add('visible');
+      nightStart = null; // Timer will start on first screenshot
+      screenshots = 0;
+      survived = false;
+      gameOver = false;
+      screamerActive = false;
+      hideReady = false;
+      isHiding = false;
+      spacebarClicks = 0;
+      if (spamTimerInterval) { clearInterval(spamTimerInterval); spamTimerInterval = null; }
+      capturedBigStein = false;
+      capturedTrump = false;
+      capturedGhost = false;
+      fileCamera = -1;
+
+      // Reset Big Stein
+      bigStein.state = BIGSTEIN_STATE.IDLE;
+      bigStein.camera = -1;
+      bigStein.spawnTime = 0;
+      bigStein.lastMoveTime = 0;
+      bigStein.isInStatic = false;
+      bigStein.aggressiveStareStart = 0;
+      bigStein.hasBeenSeen = false;
+      bigStein.firstSeenTime = 0;
+      bigStein.moveCount = 0;
+      bigStein.lastMoveWasScreenshot = false;
+      bigStein.rageAccumulation = 0;
+      bigStein.hasDoneFirstAggressiveMove = false;
+      bigStein.visualVar = Math.random();
+      camPower.fill('ON');
+      outageActive = false;
+      if (decoyBtn) {
+        decoyBtn.textContent = '📯 DECOY (3)';
+        decoyBtn.disabled = false;
+      }
+      decoyUses = 3;
+
+      // Reset Trump
+      trump.active = false;
+      trump.camera = -1;
+      trump.spawnTime = 0;
+      trump.lastMoveTime = 0;
+      trump.moveCount = 0;
+      trump.inVent = false;
+      trump.ventNumber = 0;
+      trump.ventEntryTime = 0;
+      trump.crawlPlayed = false;
+      trump.crawlStartTime = 0;
+      if (trump.crawlTimeout) { clearTimeout(trump.crawlTimeout); trump.crawlTimeout = null; }
+      trump.seenInVent = false;
+      trump.ventStaticActive = false;
+      trump.isBluffMode = false;
+      trump.bluffCrawlPlayed = false;
+      trump.inRoom = false;
+      trump.roomChallengeActive = false;
+      if (trump.roomChallengeTimeout) { clearInterval(trump.roomChallengeTimeout); trump.roomChallengeTimeout = null; }
+      if (trumpHideCountdownInterval) { clearInterval(trumpHideCountdownInterval); trumpHideCountdownInterval = null; }
+      const countdownEl = document.getElementById('trump-hide-countdown');
+      if (countdownEl) countdownEl.textContent = '';
+
+      // Reset room background
+      const roomBg = document.getElementById('room-bg');
+      if (roomBg) setSrc(roomBg, 'room.png');
+
+      updateRageUI();
+      resetOxygen(); // Reset oxygen system
+
+      screenshotsHud.textContent = `PHOTOS: BigStein[✗] Trump[✗] Ghost[✗]  0/${REQUIRED_SCREENSHOTS}`;
+
+      // Ensure cameras are visible by default when game starts
+      camOpen = true;
+      camWrap.classList.add('visible');
+      panel.classList.add('visible');
+      toggleBtn.textContent = '▼ CAMERAS';
+
+      console.log('startGame: Cameras should be open, camOpen=' + camOpen);
+
+      // Use double-rAF to ensure DOM layout is fully computed before we size the canvas
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          resizeCanvas();
+          selectCam(0);
+          console.log('startGame: Canvas resized and camera 0 selected');
+
+          // Start ghost mechanic
+          startGhostMechanic();
+
+          // Init cue numbers (spawning starts when Big Stein goes aggressive)
+          initCueNumbers();
+        });
+      });
+    }
+
+    function showGameOver(reason) {
+      if (gameOver) return; // prevent double-trigger
+      if (alarmAudio) alarmAudio.pause();
+      if (ghostInterval) {
+        clearInterval(ghostInterval);
+        ghostInterval = null;
+      }
+      if (ghostTimeout) {
+        clearTimeout(ghostTimeout);
+        ghostTimeout = null;
+      }
+      if (ghostCountdownInterval) {
+        clearInterval(ghostCountdownInterval);
+        ghostCountdownInterval = null;
+      }
+      ghostActive = false;
+      document.getElementById('ghost-timer').style.display = 'none';
+
+      // Clear cue number spawn timers
+      cueSpawnTimers.forEach(t => clearTimeout(t));
+      cueSpawnTimers = [];
+      cueNumbersEnabled = false;
+
+      // Clear Trump challenge
+      if (trumpHideCountdownInterval) { clearInterval(trumpHideCountdownInterval); trumpHideCountdownInterval = null; }
+      if (trump.roomChallengeTimeout) { clearInterval(trump.roomChallengeTimeout); trump.roomChallengeTimeout = null; }
+      trump.roomChallengeActive = false;
+
+      screamerActive = false;
+
+      gameOver = true;
+      gameState = 'gameover';
+      gameoverReason.textContent = reason;
+      gameoverDiv.classList.add('visible');
+    }
+
+    function retryGame() {
+      playButtonSfx();
+      gameoverDiv.classList.remove('visible');
+      survDiv.style.display = 'none';
+      gameDiv.classList.remove('visible');
+      staticOverlay.classList.remove('visible');
+      camCanvas.classList.remove('static');
+
+      if (window._computerReset) window._computerReset();
+
+      storyIndex = 0;
+      showStoryline();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // BIG STEIN LOGIC
+    // ═══════════════════════════════════════════════════════════════════════════
+    function getGroundZone(camIndex) {
+      return CAMERA_GROUND_ZONES[camIndex] || { minY: 65, maxY: 88 };
+    }
+
+    function spawnBigStein() {
+      const elapsed = (Date.now() - nightStart) / 1000;
+
+      if (elapsed < BIGSTEIN_SPAWN_DELAY) return;
+      if (bigStein.state !== BIGSTEIN_STATE.IDLE) return;
+
+      // Random spawn on allowed cameras (5-11)
+      const camIndex = SPAWN_CAMERAS[Math.floor(Math.random() * SPAWN_CAMERAS.length)];
+      const groundZone = getGroundZone(camIndex);
+
+      bigStein.state = BIGSTEIN_STATE.PASSIVE;
+      bigStein.camera = camIndex;
+      bigStein.spawnTime = Date.now();
+      bigStein.lastMoveTime = Date.now();
+
+      // Random position within ground zone
+      bigStein.x = 20 + Math.random() * 60;
+      bigStein.y = groundZone.minY + Math.random() * (groundZone.maxY - groundZone.minY);
+      bigStein.targetX = 20 + Math.random() * 60;
+      bigStein.targetY = groundZone.minY + Math.random() * (groundZone.maxY - groundZone.minY);
+      bigStein.speed = 0.015 + Math.random() * 0.01;
+
+      // Always spawn with backcharacter.png (not officestein)
+      bigStein.useOfficestein = false;
+      console.log(`Big Stein spawned PASSIVE on CAM ${camIndex + 1} with backcharacter.png`);
+
+      playChurchBell();
+      console.log(`Big Stein spawned PASSIVE on CAM ${camIndex + 1}`);
+    }
+
+    function updateBigSteinPassive() {
+      if (bigStein.state !== BIGSTEIN_STATE.PASSIVE) return;
+      if (bigStein.isInStatic) return;
+
+      const groundZone = getGroundZone(bigStein.camera);
+      const now = Date.now();
+
+      if (activeCam === bigStein.camera) {
+        if (!bigStein.hasBeenSeen) {
+          bigStein.hasBeenSeen = true;
+          bigStein.firstSeenTime = now;
+          console.log("Big Stein has been seen for the first time!");
+        }
+      }
+
+      // If player is watching Big Stein's camera
+      if (activeCam === bigStein.camera) {
+        // Move slowly while being watched
+        const dx = bigStein.targetX - bigStein.x;
+        const dy = bigStein.targetY - bigStein.y;
+
+        bigStein.x += Math.sign(dx) * Math.min(Math.abs(dx), bigStein.speed);
+        bigStein.y += Math.sign(dy) * Math.min(Math.abs(dy), bigStein.speed * 0.5);
+
+        // Pick new target when reached
+        if (Math.abs(dx) < 1 && Math.abs(dy) < 1) {
+          bigStein.targetX = 15 + Math.random() * 70;
+          bigStein.targetY = groundZone.minY + Math.random() * (groundZone.maxY - groundZone.minY);
+        }
+      }
+
+      // If he has been seen, wait 20s then move quickly
+      if (bigStein.hasBeenSeen && (now - bigStein.firstSeenTime >= 20000)) {
+        moveToRandomCamera();
+        bigStein.hasBeenSeen = false;
+      }
+    }
+
+    function moveToRandomCamera() {
+      // Special case: If at CAM 4, 50% chance to go to CAM 3 or CAM 7
+      if (bigStein.camera === 3) {
+        const newCam = Math.random() < 0.5 ? 2 : 6; // 50% CAM 3 (index 2) or CAM 7 (index 6)
+        moveBigSteinToCamera(newCam);
+        bigStein.lastMoveTime = Date.now();
+        console.log(`Big Stein moved PASSIVELY from CAM 4 to CAM ${newCam + 1}`);
+        return;
+      }
+
+      // Get adjacent cameras
+      const adjacent = ADJACENCY[bigStein.camera] || [];
+
+      // Filter to only far cameras (CAM 8-11, indices 7-10) — Big Stein stays in the back in passive mode
+      const validCameras = adjacent.filter(c => c >= 7);
+
+      if (validCameras.length === 0) {
+        // If no valid adjacent, pick any from spawn cameras
+        const newCam = SPAWN_CAMERAS[Math.floor(Math.random() * SPAWN_CAMERAS.length)];
+        moveBigSteinToCamera(newCam);
+      } else {
+        const newCam = validCameras[Math.floor(Math.random() * validCameras.length)];
+        moveBigSteinToCamera(newCam);
+      }
+
+      bigStein.lastMoveTime = Date.now();
+      console.log(`Big Stein moved PASSIVELY to CAM ${bigStein.camera + 1}`);
+    }
+
+    function moveBigSteinToCamera(newCam, silent = false, fromScreenshot = false) {
+      const groundZone = getGroundZone(newCam);
+      bigStein.camera = newCam;
+      bigStein.x = 20 + Math.random() * 60;
+      bigStein.y = groundZone.minY + Math.random() * (groundZone.maxY - groundZone.minY);
+      bigStein.targetX = 20 + Math.random() * 60;
+      bigStein.targetY = groundZone.minY + Math.random() * (groundZone.maxY - groundZone.minY);
+      bigStein.visualVar = Math.random();
+
+      // In AGGRESSIVE mode: 50% chance for character.png or officestein.png on every move
+      // In PASSIVE mode: always use backcharacter.png
+      if (bigStein.state === BIGSTEIN_STATE.AGGRESSIVE) {
+        bigStein.useOfficestein = Math.random() < 0.5;
+        console.log(`Big Stein moved to CAM ${newCam + 1} (AGGRESSIVE) with ${bigStein.useOfficestein ? 'officestein' : 'character'}.png (50/50)`);
+      } else {
+        bigStein.useOfficestein = false;
+        console.log(`Big Stein moved to CAM ${newCam + 1} (PASSIVE) with backcharacter.png`);
+      }
+
+      if (!silent && gameState === 'game' && camOpen && activeCam === newCam && camPower[activeCam] === 'ON') {
+        if (!bigStein.isInStatic) {
+          playCctvLagSfx();
+          camCanvas.classList.add('static');
+          staticOverlay.classList.add('visible');
+          bigStein.isInStatic = true;
+          setTimeout(() => {
+            camCanvas.classList.remove('static');
+            staticOverlay.classList.remove('visible');
+            if (cctvlagAudio) { cctvlagAudio.pause(); cctvlagAudio.currentTime = 0; }
+            bigStein.isInStatic = false;
+          }, 2000);
+        }
+      }
+    }
+
+    function triggerAggressive() {
+      if (bigStein.state !== BIGSTEIN_STATE.PASSIVE) return;
+
+      bigStein.state = BIGSTEIN_STATE.AGGRESSIVE;
+      bigStein.hasBeenSeen = false;
+      bigStein.useOfficestein = false; // Always use character.png when first turning aggressive
+      bigStein.screenshotToggle = true; // Set to true so first MOVE will be officestein.png
+
+      console.log(`Big Stein turned AGGRESSIVE with character.png!`);
+      updateRageUI();
+
+      // Start cue number spawning — first number appears 30s from now
+      startCueNumberSpawns();
+
+      // He turns to face you instantly.
+      // Wait 1.5 seconds, then trigger static and disappear to move closer.
+      setTimeout(() => {
+        if (bigStein.state === BIGSTEIN_STATE.AGGRESSIVE && !bigStein.isInStatic) {
+          triggerStaticAndMoveCloser();
+        }
+      }, 1500);
+    }
+
+    function updateBigSteinAggressive() {
+      if (bigStein.state !== BIGSTEIN_STATE.AGGRESSIVE) return;
+      if (bigStein.isInStatic) return;
+
+      const now = Date.now();
+
+      if (activeCam === bigStein.camera) {
+        if (!bigStein.hasBeenSeen) {
+          bigStein.hasBeenSeen = true;
+          bigStein.firstSeenTime = now;
+          console.log("Big Stein spotted! Will move in 3s if still watched.");
+        }
+
+        // If the player stares at Big Stein for 3 seconds, he moves closer — but only once per visit
+        if (bigStein.hasBeenSeen && now - bigStein.firstSeenTime >= 3000) {
+          bigStein.hasBeenSeen = false;  // reset so it doesn't fire every frame
+          bigStein.firstSeenTime = 0;
+          triggerStaticAndMoveCloser();
+        }
+      } else {
+        // Reset hasBeenSeen when player looks away
+        bigStein.hasBeenSeen = false;
+
+        // Get the next camera Big Stein will move to
+        const adjacent = ADJACENCY[bigStein.camera] || [];
+        const nextCam = adjacent.length > 0 ? adjacent.reduce((best, cam) => 
+          DISTANCE_TO_YOU[cam] < DISTANCE_TO_YOU[best] ? cam : best
+        ) : bigStein.camera;
+
+        // Get base speed for this specific transition
+        const baseSpeed = getMoveSpeed(bigStein.camera, nextCam);
+        
+        // Apply rage reduction — each rage second shaves 1s off movement, min 6s
+        const rageReduction = bigStein.rageAccumulation * 1000;
+        const currentSpeed = Math.max(6000, baseSpeed - rageReduction);
+
+        // Slow down if ANY camera is broken
+        let isOutage = false;
+        for (let i = 0; i < 11; i++) {
+          if (camPower[i] !== 'ON') {
+            isOutage = true;
+            break;
+          }
+        }
+        let finalSpeed = currentSpeed;
+        if (isOutage) {
+          finalSpeed += 1500;
+        }
+
+        if (now - bigStein.lastMoveTime >= finalSpeed) {
+          moveCloserToPlayer();
+          bigStein.lastMoveTime = now;
+        }
+      }
+    }
+
+    function triggerStaticAndMoveCloser(fromScreenshot = false) {
+      if (bigStein.isInStatic) return;
+
+      bigStein.isInStatic = true;
+
+      // Play static sound and show effect
+      playCctvLagSfx();
+      camCanvas.classList.add('static');
+      staticOverlay.classList.add('visible');
+
+      // After static duration, move closer (User requested 2 seconds)
+      setTimeout(() => {
+        camCanvas.classList.remove('static');
+        staticOverlay.classList.remove('visible');
+
+        // Stop static sound
+        if (cctvlagAudio) {
+          cctvlagAudio.pause();
+          cctvlagAudio.currentTime = 0;
+        }
+
+        bigStein.isInStatic = false;
+        bigStein.hasBeenSeen = false;
+
+        // Find path to move closer to YOU - pass fromScreenshot flag
+        moveCloserToPlayer(true, fromScreenshot);
+
+        bigStein.lastMoveTime = Date.now();
+      }, 2000);
+    }
+
+    function triggerAssistedStatic(newCam) {
+      if (bigStein.isInStatic) return;
+
+      bigStein.isInStatic = true;
+
+      // Play static sound and show effect to indicate honk worked
+      playCctvLagSfx();
+      camCanvas.classList.add('static');
+      staticOverlay.classList.add('visible');
+
+      setTimeout(() => {
+        camCanvas.classList.remove('static');
+        staticOverlay.classList.remove('visible');
+
+        // Stop static sound
+        if (cctvlagAudio) {
+          cctvlagAudio.pause();
+          cctvlagAudio.currentTime = 0;
+        }
+
+        bigStein.isInStatic = false;
+        bigStein.hasBeenSeen = false;
+
+        // Move to the lured camera manually
+        moveBigSteinToCamera(newCam, true);
+
+        bigStein.lastMoveTime = Date.now();
+      }, 2000);
+    }
+
+    function moveCloserToPlayer(silent = false, triggeredByScreenshot = false) {
+      const currentCam = bigStein.camera;
+
+      if (currentCam === 0) {
+        // Big Stein reached CAM 1 — he silently disappears off all cameras.
+        // Player must spam spacebar 40 times within 5 seconds to hide.
+        bigStein.camera = -1;
+        bigStein.isInStatic = false;
+        hideReady = true;
+        screamerActive = true;
+        console.log('Big Stein vanished from CAM 1! Spam spacebar challenge starting...');
+
+        // Start the spam spacebar challenge
+        startSpamChallenge();
+        return;
+      }
+
+      const adjacent = ADJACENCY[currentCam] || [];
+
+      // Find the adjacent camera with smallest distance to YOU
+      let bestCam = currentCam;
+      let bestDist = DISTANCE_TO_YOU[currentCam];
+
+      for (const adjCam of adjacent) {
+        const dist = DISTANCE_TO_YOU[adjCam];
+        if (dist < bestDist) {
+          bestDist = dist;
+          bestCam = adjCam;
+        }
+      }
+
+      if (bestCam !== currentCam) {
+        moveBigSteinToCamera(bestCam, silent, triggeredByScreenshot);
+        console.log(`Big Stein moved AGGRESSIVELY to CAM ${bestCam + 1} (dist: ${bestDist})${triggeredByScreenshot ? ' [FROM SCREENSHOT]' : ''}`);
+
+        // Increment move count
+        bigStein.moveCount++;
+
+        // Electricity outage: 25% chance when Big Stein moves, with 30-second cooldown
+        const isCurrentlyBroken = camPower.some(p => p !== 'ON');
+        if (!isCurrentlyBroken && !outageActive) {
+          const shouldTriggerOutage = Math.random() < 0.25;
+          console.log(`Electricity check: Move ${bigStein.moveCount} - ${shouldTriggerOutage ? 'TRIGGERED (25%)' : 'no outage (75%)'}`);
+
+          if (shouldTriggerOutage) {
+            triggerOutage();
+          }
+        }
+      }
+    }
+
+    function drawBigStein() {
+      if (bigStein.state === BIGSTEIN_STATE.IDLE) return;
+      if (bigStein.camera !== activeCam) return;
+      if (bigStein.isInStatic) return;
+
+      const canvasW = camCanvas.width;
+      const canvasH = camCanvas.height;
+      const camIdx = activeCam;
+
+      // New special rendering logic for Cams 1-4
+      if (camIdx === 0) {
+        // CAM 1: Always inverted, zoomed in, 50/50 left or right
+        if (!bigSteinInvertedImg || !bigSteinInvertedImg.complete || bigSteinInvertedImg.naturalWidth === 0) return;
+
+        const steinSize = canvasH * 0.9;
+        const steinX = (bigStein.visualVar < 0.5) ? canvasW * 0.2 : canvasW * 0.8;
+        const steinY = canvasH * 0.3;
+
+        ctx.drawImage(
+          bigSteinInvertedImg,
+          steinX - steinSize / 2,
+          steinY - steinSize / 2,
+          steinSize,
+          steinSize
+        );
+        return;
+      }
+
+      // Default rendering logic
+      // After screenshot: 50/50 between officestein and character.png (always front-facing when aggressive)
+      let useImg;
+      if (bigStein.useOfficestein && officesteinImg && officesteinImg.complete && officesteinImg.naturalWidth > 0) {
+        useImg = officesteinImg;
+      } else {
+        // When aggressive, always use front-facing character
+        // When passive, use back-facing character
+        useImg = (bigStein.state === BIGSTEIN_STATE.AGGRESSIVE) ? bigSteinFrontImg : bigSteinBackImg;
+      }
+
+      if (!useImg || !useImg.complete || useImg.naturalWidth === 0) return;
+
+      const img = imgs[activeCam];
+      if (!img || !img.complete) return;
+
+      const isAggressive = bigStein.state === BIGSTEIN_STATE.AGGRESSIVE;
+      // Officestein is slightly bigger than character
+      const baseSize = bigStein.useOfficestein
+        ? (isAggressive ? canvasH * 0.5 : canvasH * 0.35)
+        : (isAggressive ? canvasH * 0.4 : canvasH * 0.25);
+      const zoomedExtra = isAggressive ? canvasH * 0.35 : canvasH * 0.2;
+      let steinSize = baseSize + (zoomedExtra * currentZoomLevel);
+
+      const baseScale = canvasH / img.naturalHeight;
+      let finalScale = baseScale;
+      if (CAMS[activeCam].zoom) {
+        const camZoomScale = baseScale * CAMS[activeCam].zoom.scale;
+        finalScale = baseScale + (camZoomScale - baseScale) * currentZoomLevel;
+      }
+
+      const displayW = img.naturalWidth * finalScale;
+      const displayH = img.naturalHeight * finalScale;
+
+      const maxScrollX = Math.max(0, displayW - canvasW);
+      const maxScrollY = Math.max(0, displayH - canvasH);
+
+      const offsetX = -(panX / 100) * maxScrollX;
+      const offsetY = -(panY / 100) * maxScrollY;
+
+      const steinDisplayX = (bigStein.x / 100) * displayW + offsetX;
+      const steinDisplayY = (bigStein.y / 100) * displayH + offsetY;
+
+      if (steinDisplayX < -steinSize || steinDisplayX > canvasW + steinSize) return;
+
+      ctx.drawImage(
+        useImg,
+        steinDisplayX - steinSize / 2,
+        steinDisplayY - steinSize,
+        steinSize,
+        steinSize
+      );
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // GHOST MECHANIC
+    // ═══════════════════════════════════════════════════════════════════════════
+    function startGhostMechanic() {
+      if (gameState !== 'game') return;
+
+      // Wait 45 seconds before starting ghost spawns (30s for Big Stein + 15s delay)
+      setTimeout(() => {
+        if (gameState !== 'game') return;
+
+        // Spawn first ghost immediately after the delay
+        spawnGhost();
+
+        // Then continue spawning every 25 seconds
+        ghostInterval = setInterval(() => {
+          if (gameState !== 'game' || ghostActive) return;
+
+          // Check if electricity panel is open
+          if (elecOverlay.classList.contains('visible')) {
+            console.log("Ghost spawn delayed - electricity panel is open");
+            return;
+          }
+
+          // Check if any cameras are broken
+          const brokenCameras = [];
+          for (let i = 0; i < 11; i++) {
+            if (camPower[i] !== 'ON') {
+              brokenCameras.push(i);
+            }
+          }
+
+          if (brokenCameras.length > 0) {
+            console.log("Ghost spawn delayed - waiting for cameras to be fixed");
+            return;
+          }
+
+          spawnGhost();
+        }, 35000); // Check every 35 seconds
+      }, 45000); // 45 seconds delay (30s Big Stein + 15s)
+    }
+
+    function spawnGhost() {
+      if (ghostActive) return;
+      
+      // Don't spawn ghost if Big Stein is in passive mode
+      if (bigStein.state === BIGSTEIN_STATE.PASSIVE) {
+        console.log("Ghost spawn blocked - Big Stein is passive");
+        return;
+      }
+
+      // Don't spawn ghost if there's an active outage
+      if (outageActive) {
+        console.log("Ghost spawn blocked - electrical outage active");
+        return;
+      }
+
+      // Pick random camera from any of the 11 cameras (indices 0-10)
+      const validCameras = Array.from({length: 11}, (_, i) => i).filter(cam => camPower[cam] === 'ON');
+      
+      // If no valid cameras (all broken), don't spawn
+      if (validCameras.length === 0) {
+        console.log("Ghost spawn blocked - no valid cameras available");
+        return;
+      }
+      
+      ghostCamera = validCameras[Math.floor(Math.random() * validCameras.length)];
+
+      // Random position on camera
+      const groundZone = getGroundZone(ghostCamera);
+      ghostX = 20 + Math.random() * 60;
+      ghostY = groundZone.minY + Math.random() * (groundZone.maxY - groundZone.minY);
+
+      ghostActive = true;
+      ghostSpawnTime = Date.now();
+
+      console.log(`Ghost spawned on CAM ${ghostCamera + 1}!`);
+
+      // Show timer
+      const ghostTimer = document.getElementById('ghost-timer');
+      ghostTimer.style.display = 'block';
+
+      // Start countdown
+      ghostCountdownInterval = setInterval(() => {
+        const elapsed = Date.now() - ghostSpawnTime;
+        const remaining = Math.max(0, 20000 - elapsed);
+        const seconds = Math.floor(remaining / 1000);
+        const milliseconds = remaining % 1000;
+        ghostTimer.textContent = `${seconds}.${milliseconds.toString().padStart(3, '0')}`;
+
+        if (remaining <= 0) {
+          clearInterval(ghostCountdownInterval);
+          ghostCountdownInterval = null;
+          ghostFailure();
+        }
+      }, 10);
+
+      // Auto-fail after 20 seconds
+      ghostTimeout = setTimeout(() => {
+        if (ghostActive) {
+          ghostFailure();
+        }
+      }, 20000);
+    }
+
+    function clickGhost() {
+      if (!ghostActive) return;
+      if (activeCam !== ghostCamera) return;
+
+      console.log("Ghost clicked!");
+
+      // Clear timeout and countdown interval
+      if (ghostTimeout) {
+        clearTimeout(ghostTimeout);
+        ghostTimeout = null;
+      }
+      if (ghostCountdownInterval) {
+        clearInterval(ghostCountdownInterval);
+        ghostCountdownInterval = null;
+      }
+
+      // Hide timer
+      const ghostTimer = document.getElementById('ghost-timer');
+      ghostTimer.style.display = 'none';
+
+      // Play static effect
+      const fullscreenStatic = document.getElementById('fullscreen-static');
+      fullscreenStatic.classList.add('visible');
+      playCctvLagSfx();
+
+      setTimeout(() => {
+        fullscreenStatic.classList.remove('visible');
+        if (cctvlagAudio) {
+          cctvlagAudio.pause();
+          cctvlagAudio.currentTime = 0;
+        }
+
+        // Reset ghost
+        ghostActive = false;
+        ghostCamera = -1;
+      }, 2000);
+    }
+
+    function ghostFailure() {
+      // Don't run if ghost is already inactive
+      if (!ghostActive) {
+        console.log("Ghost failure cancelled - ghost already inactive");
+        return;
+      }
+
+      console.log("Ghost not clicked in time - jumpscare!");
+
+      // Hide timer
+      const ghostTimer = document.getElementById('ghost-timer');
+      ghostTimer.style.display = 'none';
+
+      // Clear intervals and timeouts
+      if (ghostInterval) {
+        clearInterval(ghostInterval);
+        ghostInterval = null;
+      }
+      if (ghostCountdownInterval) {
+        clearInterval(ghostCountdownInterval);
+        ghostCountdownInterval = null;
+      }
+      if (ghostTimeout) {
+        clearTimeout(ghostTimeout);
+        ghostTimeout = null;
+      }
+
+      ghostActive = false;
+      ghostCamera = -1;
+
+      // Play static first
+      const fullscreenStatic = document.getElementById('fullscreen-static');
+      fullscreenStatic.classList.add('visible');
+      playCctvLagSfx();
+
+      setTimeout(() => {
+        fullscreenStatic.classList.remove('visible');
+        if (cctvlagAudio) {
+          cctvlagAudio.pause();
+          cctvlagAudio.currentTime = 0;
+        }
+
+        // Jumpscare
+        if (jumpscareAudio) {
+          jumpscareAudio.volume = 1.0;
+          jumpscareAudio.currentTime = 2;
+          jumpscareAudio.play().catch(() => { });
+        }
+
+        const jumpscareImg = document.getElementById('jumpscare-final');
+        jumpscareImg.style.display = 'block';
+        jumpscareImg.getBoundingClientRect();
+        jumpscareImg.style.transform = 'translate(-50%, -50%) scale(1.0)';
+
+        setTimeout(() => {
+          jumpscareImg.style.display = 'none';
+          jumpscareImg.style.transform = 'translate(-50%, -50%) scale(0.1)';
+          if (jumpscareAudio) {
+            jumpscareAudio.pause();
+            jumpscareAudio.currentTime = 0;
+          }
+          showGameOver('The ghost got you. You failed to click it in time.');
+        }, 3000);
+      }, 2000);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // CUE NUMBERS
+    // ═══════════════════════════════════════════════════════════════════════════
+    // CUE NUMBER FORMULA
+    // ═══════════════════════════════════════════════════════════════════════════
+    // Formula shown to the player: floor( (A + B) / C ) = file camera number
+    // A, B, C are the 3 cue numbers found on cameras (each 1–20).
+    // Result is always one of: 1, 3, 5, 6, 7 (the valid file camera numbers).
+    //
+    // At game start:
+    //   1. Pick a random target cam from [1,3,5,6,7]
+    //   2. Generate all valid (A,B,C) triplets where floor((A+B)/C) = target
+    //   3. Exclude the triplet used last game (guarantees variety)
+    //   4. Pick one randomly and assign A/B/C to 3 different cameras
+
+    const FILE_CAMERAS = [1, 3, 5, 6, 7]; // possible file locations (1-indexed cam numbers)
+
+    function buildTriplets(target) {
+      // Returns all [A, B, C] where A,B,C in 1..20, all distinct, floor((A+B)/C) === target
+      const results = [];
+      for (let c = 1; c <= 20; c++) {
+        const sumMin = target * c;
+        const sumMax = (target + 1) * c - 1;
+        for (let a = 1; a <= 20; a++) {
+          for (let b = 1; b <= 20; b++) {
+            if (a === b || a === c || b === c) continue; // keep all 3 distinct
+            const s = a + b;
+            if (s >= sumMin && s <= sumMax && s <= 40) {
+              results.push([a, b, c]);
+            }
+          }
+        }
+      }
+      return results;
+    }
+
+    function initCueNumbers() {
+      // Clear any previous state
+      cueSpawnTimers.forEach(t => clearTimeout(t));
+      cueNumbers = [];
+      cueSpawned = [];
+      cueCollected = [];
+      cueSpawnTimers = [];
+      cueNumbersEnabled = false;
+
+      // 1. Pick target camera
+      const target = FILE_CAMERAS[Math.floor(Math.random() * FILE_CAMERAS.length)];
+      fileCamera = target; // 1-indexed cam number
+
+      // 2. Get all valid triplets for this target
+      let triplets = buildTriplets(target);
+
+      // 3. Exclude last used triplet (guarantees variety even on same cam)
+      if (lastTripletKey && triplets.length > 1) {
+        const filtered = triplets.filter(t => `${t[0]},${t[1]},${t[2]}` !== lastTripletKey);
+        if (filtered.length > 0) triplets = filtered;
+      }
+
+      // 4. Pick one randomly
+      const chosen = triplets[Math.floor(Math.random() * triplets.length)];
+      lastTripletKey = `${chosen[0]},${chosen[1]},${chosen[2]}`;
+      const [A, B, C] = chosen;
+
+      console.log(`File hidden on CAM ${fileCamera} | Triplet: A=${A} B=${B} C=${C} | floor((${A}+${B})/${C}) = ${Math.floor((A+B)/C)}`);
+
+      // 5. Assign A, B, C to 3 different random cameras (0-indexed, not vents)
+      const camPool = Array.from({ length: 11 }, (_, i) => i);
+      for (let i = camPool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [camPool[i], camPool[j]] = [camPool[j], camPool[i]];
+      }
+
+      const values = [A, B, C];
+      for (let i = 0; i < CUE_COUNT; i++) {
+        const cam = camPool[i];
+        const x = 15 + Math.random() * 70;
+        const y = 15 + Math.random() * 65;
+        cueNumbers.push({ value: values[i], camera: cam, x, y });
+        cueSpawned.push(false);
+        cueCollected.push(false);
+      }
+
+      console.log('Cue numbers placed:', cueNumbers.map((c, i) => `${['A','B','C'][i]}=${c.value} on CAM ${c.camera + 1}`).join(', '));
+    }
+
+    function startCueNumberSpawns() {
+      if (cueNumbersEnabled) return;
+      cueNumbersEnabled = true;
+      console.log('Cue number spawning started (first in 30s)');
+
+      for (let i = 0; i < CUE_COUNT; i++) {
+        const delay = CUE_SPAWN_DELAY + i * CUE_SPAWN_INTERVAL;
+        const idx = i;
+        const t = setTimeout(() => {
+          if (gameState !== 'game' || gameOver) return;
+          cueSpawned[idx] = true;
+          console.log(`Cue #${cueNumbers[idx].value} appeared on CAM ${cueNumbers[idx].camera + 1}`);
+        }, delay);
+        cueSpawnTimers.push(t);
+      }
+    }
+
+    function drawCueNumbers() {
+      for (let i = 0; i < CUE_COUNT; i++) {
+        if (!cueSpawned[i]) continue;
+        if (cueCollected[i]) continue; // disappears once collected
+        const cue = cueNumbers[i];
+        if (cue.camera !== activeCam) continue;
+
+        const canvasW = camCanvas.width;
+        const canvasH = camCanvas.height;
+        const img = imgs[activeCam];
+        if (!img || !img.complete) continue;
+
+        const baseScale = canvasH / img.naturalHeight;
+        let finalScale = baseScale;
+        if (CAMS[activeCam].zoom) {
+          const camZoomScale = baseScale * CAMS[activeCam].zoom.scale;
+          finalScale = baseScale + (camZoomScale - baseScale) * currentZoomLevel;
+        }
+        const displayW = img.naturalWidth * finalScale;
+        const displayH = img.naturalHeight * finalScale;
+        const maxScrollX = Math.max(0, displayW - canvasW);
+        const maxScrollY = Math.max(0, displayH - canvasH);
+        const offsetX = -(panX / 100) * maxScrollX;
+        const offsetY = -(panY / 100) * maxScrollY;
+
+        const drawX = (cue.x / 100) * displayW + offsetX;
+        const drawY = (cue.y / 100) * displayH + offsetY;
+
+        if (drawX < -40 || drawX > canvasW + 40 || drawY < -20 || drawY > canvasH + 20) continue;
+
+        const fontSize = Math.round(canvasH * 0.028);
+        ctx.save();
+        ctx.font = `bold ${fontSize}px Courier New`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = 'rgba(0,0,0,0.8)';
+        ctx.shadowBlur = 4;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+        ctx.fillText(String(cue.value), drawX, drawY);
+        ctx.restore();
+      }
+    }
+
+    function tryClickCueNumber(clickX, clickY) {
+      const canvasW = camCanvas.width;
+      const canvasH = camCanvas.height;
+      const img = imgs[activeCam];
+      if (!img || !img.complete) return false;
+
+      const baseScale = canvasH / img.naturalHeight;
+      let finalScale = baseScale;
+      if (CAMS[activeCam].zoom) {
+        const camZoomScale = baseScale * CAMS[activeCam].zoom.scale;
+        finalScale = baseScale + (camZoomScale - baseScale) * currentZoomLevel;
+      }
+      const displayW = img.naturalWidth * finalScale;
+      const displayH = img.naturalHeight * finalScale;
+      const maxScrollX = Math.max(0, displayW - canvasW);
+      const maxScrollY = Math.max(0, displayH - canvasH);
+      const offsetX = -(panX / 100) * maxScrollX;
+      const offsetY = -(panY / 100) * maxScrollY;
+
+      const hitRadius = Math.round(canvasH * 0.04); // slightly larger than the text for easier clicking
+
+      for (let i = 0; i < CUE_COUNT; i++) {
+        if (!cueSpawned[i] || cueCollected[i]) continue;
+        const cue = cueNumbers[i];
+        if (cue.camera !== activeCam) continue;
+
+        const drawX = (cue.x / 100) * displayW + offsetX;
+        const drawY = (cue.y / 100) * displayH + offsetY;
+
+        const dx = clickX - drawX;
+        const dy = clickY - drawY;
+        if (Math.sqrt(dx * dx + dy * dy) <= hitRadius) {
+          cueCollected[i] = true;
+          showCaptureFlash(`NOTE: ${cue.value}`);
+          console.log(`Cue number ${cue.value} collected from CAM ${cue.camera + 1}`);
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // TRUMP MECHANIC
+    // ═══════════════════════════════════════════════════════════════════════════
+    function respawnTrump() {
+      // Wait 15 seconds then respawn in bluff mode
+      console.log('Trump retreating — will respawn in 15 seconds (BLUFF MODE)');
+      setTimeout(() => {
+        if (gameState !== 'game' || gameOver) return;
+        const camIndex = TRUMP_CAMERAS[Math.floor(Math.random() * TRUMP_CAMERAS.length)];
+        const groundZone = getGroundZone(camIndex);
+        trump.active = true;
+        trump.camera = camIndex;
+        trump.spawnTime = Date.now();
+        trump.lastMoveTime = Date.now();
+        trump.x = 20 + Math.random() * 60;
+        trump.y = groundZone.minY + Math.random() * (groundZone.maxY - groundZone.minY);
+        trump.moveCount = 0;
+        trump.inVent = false;
+        trump.ventNumber = 0;
+        trump.ventEntryTime = 0;
+        trump.crawlPlayed = false;
+        trump.crawlStartTime = 0;
+        trump.crawlTimeout = null;
+        trump.seenInVent = false;
+        trump.ventStaticActive = false;
+        trump.inRoom = false;
+        trump.roomChallengeActive = false;
+        trump.isBluffMode = true;   // Bluff mode on
+        trump.bluffCrawlPlayed = false;
+        console.log(`Trump respawned (BLUFF MODE) on CAM ${camIndex + 1}`);
+      }, 15000);
+    }
+
+    function spawnTrump() {
+      if (trump.active) return;
+      if (bigStein.state === BIGSTEIN_STATE.IDLE) {
+        console.log('Trump waiting: Big Stein not spawned yet');
+        return;
+      }
+      
+      const elapsed = (Date.now() - bigStein.spawnTime) / 1000;
+      console.log(`Trump spawn check: ${elapsed.toFixed(1)}s elapsed, need ${TRUMP_SPAWN_DELAY}s`);
+      if (elapsed < TRUMP_SPAWN_DELAY) return;
+      
+      // Spawn on random camera from 5-11
+      const camIndex = TRUMP_CAMERAS[Math.floor(Math.random() * TRUMP_CAMERAS.length)];
+      const groundZone = getGroundZone(camIndex);
+      
+      trump.active = true;
+      trump.camera = camIndex;
+      trump.spawnTime = Date.now();
+      trump.lastMoveTime = Date.now();
+      trump.x = 20 + Math.random() * 60;
+      trump.y = groundZone.minY + Math.random() * (groundZone.maxY - groundZone.minY);
+      trump.moveCount = 0;
+      trump.inVent = false;
+      trump.ventNumber = 0;
+      
+      console.log(`Trump spawned on CAM ${camIndex + 1}`);
+    }
+
+    function updateTrump() {
+      if (!trump.active) return;
+      
+      const now = Date.now();
+      
+      // If in vent, check if it's time to crawl to room
+      if (trump.inVent && !trump.inRoom) {
+        const timeInVent = now - trump.ventEntryTime;
+        
+        // After 25s in vent (20s in bluff mode), play crawl sound
+        const ventWait = trump.isBluffMode ? 20000 : TRUMP_VENT_WAIT_TIME;
+        if (timeInVent >= ventWait && !trump.crawlPlayed) {
+          trump.crawlPlayed = true;
+          trump.crawlStartTime = now; // Track when crawl started
+          if (crawlAudio) {
+            crawlAudio.currentTime = 0;
+            crawlAudio.play().catch(() => {});
+          }
+          console.log('Trump is crawling from vent to room... Close vents within 3 seconds!');
+
+          // Show static on the vent cam while crawling
+          if (activeCam === trump.camera) {
+            camCanvas.classList.add('static');
+            staticOverlay.classList.add('visible');
+          }
+          // Also flag the vent cam as static so it shows when player switches to it
+          trump.ventStaticActive = true;
+          setTimeout(() => {
+            trump.ventStaticActive = false;
+            if (activeCam === 11 || activeCam === 12) {
+              camCanvas.classList.remove('static');
+              staticOverlay.classList.remove('visible');
+            }
+          }, TRUMP_CRAWL_DURATION);
+          
+          // After crawl sound finishes (9.3 seconds), Trump reaches the room
+          trump.crawlTimeout = setTimeout(() => {
+            if (!trump.inVent) return; // Was already stopped by vent close
+            trump.inRoom = true;
+            trump.inVent = false; // Restore normal vent image
+            trump.camera = -1;   // Clear vent camera so trump.png doesn't show there
+            console.log('Trump has reached the room!');
+            // Swap room background to trumproom.png
+            const roomBg = document.getElementById('room-bg');
+            if (roomBg) setSrc(roomBg, 'trumproom.png');
+            // Start the 3-second hide challenge
+            startTrumpRoomChallenge();
+          }, TRUMP_CRAWL_DURATION);
+        }
+        return;
+      }
+      
+      // If already in room, stay there
+      if (trump.inRoom) return;
+      
+      const timeSinceLastMove = now - trump.lastMoveTime;
+      
+      // Move every 10 seconds
+      if (timeSinceLastMove >= TRUMP_MOVE_INTERVAL) {
+        trump.moveCount++;
+
+        // Bluff mode: play fake crawl sound at move 2 (only once)
+        if (trump.isBluffMode && trump.moveCount === 2 && !trump.bluffCrawlPlayed) {
+          trump.bluffCrawlPlayed = true;
+          if (crawlAudio) {
+            crawlAudio.currentTime = 0;
+            crawlAudio.play().catch(() => {});
+          }
+          console.log('Trump BLUFF crawl — fake out! Full 9.3s audio plays.');
+        }
+
+        // Vent threshold: 5 moves in bluff mode, 4 normally
+        const ventThreshold = trump.isBluffMode ? 5 : TRUMP_MOVES_BEFORE_VENT;
+
+        // After threshold moves, go to a vent (only if vents are open)
+        if (trump.moveCount >= ventThreshold) {
+          if (!ventsOpen) {
+            // Vents are closed — Trump can't enter, reset move count and keep roaming
+            trump.moveCount = ventThreshold - 1;
+            console.log('Trump tried to enter vent but vents are CLOSED — kept roaming');
+            const newCam = TRUMP_CAMERAS[Math.floor(Math.random() * TRUMP_CAMERAS.length)];
+            const groundZone = getGroundZone(newCam);
+            trump.camera = newCam;
+            trump.x = 20 + Math.random() * 60;
+            trump.y = groundZone.minY + Math.random() * (groundZone.maxY - groundZone.minY);
+            trump.lastMoveTime = now;
+            return;
+          }
+          trump.inVent = true;
+          trump.ventNumber = Math.random() < 0.5 ? 1 : 2;
+          trump.camera = trump.ventNumber === 1 ? 11 : 12;
+          trump.ventEntryTime = now;
+          trump.lastMoveTime = now;
+          trump.seenInVent = false; // Reset — player must spot him fresh
+          console.log(`Trump entered VENT ${trump.ventNumber} and will stay there`);
+          return;
+        }
+        
+        // Pick random camera from 5-11
+        const newCam = TRUMP_CAMERAS[Math.floor(Math.random() * TRUMP_CAMERAS.length)];
+        const groundZone = getGroundZone(newCam);
+        
+        trump.camera = newCam;
+        trump.x = 20 + Math.random() * 60;
+        trump.y = groundZone.minY + Math.random() * (groundZone.maxY - groundZone.minY);
+        trump.lastMoveTime = now;
+        
+        console.log(`Trump moved to CAM ${newCam + 1} (move ${trump.moveCount}/${TRUMP_MOVES_BEFORE_VENT})`);
+      }
+    }
+
+    function drawTrump() {
+      if (!trump.active) return;
+      if (trump.inVent) return; // Don't draw trump.png when in vent
+      if (trump.camera !== activeCam) return;
+      if (!trumpImg || !trumpImg.complete || trumpImg.naturalWidth === 0) {
+        console.log('Trump image not loaded');
+        return;
+      }
+      
+      const canvasW = camCanvas.width;
+      const canvasH = camCanvas.height;
+      
+      const img = imgs[activeCam];
+      if (!img || !img.complete) return;
+      
+      // Trump size (larger than Big Stein)
+      const trumpSize = canvasH * 0.5;
+      
+      const baseScale = canvasH / img.naturalHeight;
+      let finalScale = baseScale;
+      if (CAMS[activeCam].zoom) {
+        const camZoomScale = baseScale * CAMS[activeCam].zoom.scale;
+        finalScale = baseScale + (camZoomScale - baseScale) * currentZoomLevel;
+      }
+      
+      const displayW = img.naturalWidth * finalScale;
+      const displayH = img.naturalHeight * finalScale;
+      
+      const maxScrollX = Math.max(0, displayW - canvasW);
+      const maxScrollY = Math.max(0, displayH - canvasH);
+      
+      const offsetX = -(panX / 100) * maxScrollX;
+      const offsetY = -(panY / 100) * maxScrollY;
+      
+      const trumpDisplayX = (trump.x / 100) * displayW + offsetX;
+      const trumpDisplayY = (trump.y / 100) * displayH + offsetY;
+      
+      if (trumpDisplayX < -trumpSize || trumpDisplayX > canvasW + trumpSize) return;
+      
+      console.log(`Drawing Trump on CAM ${activeCam + 1} at (${trumpDisplayX.toFixed(0)}, ${trumpDisplayY.toFixed(0)})`);
+      
+      ctx.drawImage(
+        trumpImg,
+        trumpDisplayX - trumpSize / 2,
+        trumpDisplayY - trumpSize,
+        trumpSize,
+        trumpSize
+      );
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // TRUMP ROOM CHALLENGE
+    // ═══════════════════════════════════════════════════════════════════════════
+    let trumpHideCountdownInterval = null;
+
+    function startTrumpRoomChallenge() {
+      if (trump.roomChallengeActive) return;
+      if (screamerActive || gameState === 'screamer') return; // Big Stein sequence already running
+      trump.roomChallengeActive = true;
+
+      console.log('Trump room challenge started! Player has 3 seconds to hide.');
+
+      // Show a countdown HUD element
+      let countdownEl = document.getElementById('trump-hide-countdown');
+      if (!countdownEl) {
+        countdownEl = document.createElement('div');
+        countdownEl.id = 'trump-hide-countdown';
+        countdownEl.style.cssText = `
+          position: fixed; top: 50%; left: 50%;
+          transform: translate(-50%, -50%);
+          color: #ff3333; font-family: 'Courier New', monospace;
+          font-size: 36px; font-weight: bold;
+          text-shadow: 0 0 20px #ff3333;
+          text-align: center; pointer-events: none; z-index: 150;
+        `;
+        document.getElementById('stage').appendChild(countdownEl);
+      }
+
+      const challengeStart = Date.now();
+      const WINDOW = 3000;
+      let resolved = false;
+
+      // Single interval handles both countdown display and hide detection
+      trumpHideCountdownInterval = setInterval(() => {
+        if (resolved) return;
+
+        const remaining = Math.max(0, WINDOW - (Date.now() - challengeStart));
+        countdownEl.textContent = `HIDE NOW! ${(remaining / 1000).toFixed(1)}s`;
+
+        // Player hid in time (cameras closed + hiding)
+        if (isHiding && !camOpen) {
+          resolved = true;
+          clearInterval(trumpHideCountdownInterval);
+          trumpHideCountdownInterval = null;
+          trump.roomChallengeTimeout = null;
+          trump.roomChallengeActive = false;
+          countdownEl.textContent = '';
+          resolveTrumpHide();
+          return;
+        }
+
+        // Time ran out — jumpscare
+        if (remaining <= 0) {
+          resolved = true;
+          clearInterval(trumpHideCountdownInterval);
+          trumpHideCountdownInterval = null;
+          trump.roomChallengeTimeout = null;
+          trump.roomChallengeActive = false;
+          countdownEl.textContent = '';
+          triggerTrumpJumpscare("Trump found you. You didn't hide in time.");
+        }
+      }, 50);
+    }
+
+    function resolveTrumpHide() {
+      console.log('Player hid from Trump — rolling 50/50...');
+      // Small delay for tension
+      setTimeout(() => {
+        if (Math.random() < 0.5) {
+          // Survived — Trump leaves, room resets
+          console.log('Player survived Trump! (50% luck)');
+          trump.active = false;
+          trump.inRoom = false;
+          trump.roomChallengeActive = false;
+          const roomBg = document.getElementById('room-bg');
+          if (roomBg) setSrc(roomBg, 'room.png');
+          // Let player come out of hiding naturally
+        } else {
+          // Caught — jumpscare even while hiding
+          console.log('Trump found player while hiding! (50% bad luck)');
+          triggerTrumpJumpscare("Trump found you, even in your hiding spot.");
+        }
+      }, 2000);
+    }
+
+    function triggerTrumpJumpscare(reason) {
+      if (gameOver) return;
+      if (screamerActive || gameState === 'screamer') return; // Big Stein sequence takes priority
+
+      // Stop all audio
+      if (backgroundAudio) { backgroundAudio.pause(); backgroundAudio.currentTime = 0; }
+      if (alarmAudio) { alarmAudio.pause(); alarmAudio.currentTime = 0; }
+      if (crawlAudio) { crawlAudio.pause(); crawlAudio.currentTime = 0; }
+      if (heartbeatAudio) { heartbeatAudio.pause(); heartbeatAudio.currentTime = 0; }
+
+      // Clear any lingering trump challenge state
+      if (trumpHideCountdownInterval) { clearInterval(trumpHideCountdownInterval); trumpHideCountdownInterval = null; }
+      if (trump.roomChallengeTimeout) { clearInterval(trump.roomChallengeTimeout); trump.roomChallengeTimeout = null; }
+      const countdownEl = document.getElementById('trump-hide-countdown');
+      if (countdownEl) countdownEl.textContent = '';
+
+      // Hide the hide scene in case player was hiding
+      document.getElementById('hide-scene').classList.remove('visible');
+
+      // Fullscreen static first
+      const fullscreenStatic = document.getElementById('fullscreen-static');
+      fullscreenStatic.classList.add('visible');
+      playCctvLagSfx();
+
+      setTimeout(() => {
+        fullscreenStatic.classList.remove('visible');
+        if (cctvlagAudio) { cctvlagAudio.pause(); cctvlagAudio.currentTime = 0; }
+
+        // Play jumpscare audio
+        if (jumpscareAudio) {
+          jumpscareAudio.volume = 1.0;
+          jumpscareAudio.currentTime = 2;
+          jumpscareAudio.play().catch(() => {});
+        }
+
+        // Show Trump jumpscare image
+        const jumpscareImg = document.getElementById('jumpscare-final');
+        // Reset room bg to normal before jumpscare
+        const roomBg = document.getElementById('room-bg');
+        if (roomBg) setSrc(roomBg, 'room.png');
+        setSrc(jumpscareImg, 'trumpjumpscare.png');
+        jumpscareImg.style.objectFit = 'contain';
+        jumpscareImg.style.transformOrigin = 'center center';
+        jumpscareImg.style.display = 'block';
+        jumpscareImg.getBoundingClientRect();
+        jumpscareImg.style.transform = 'translate(-50%, -50%) scale(1.1)';
+
+        setTimeout(() => {
+          jumpscareImg.style.display = 'none';
+          jumpscareImg.style.transform = 'translate(-50%, -50%) scale(0.1)';
+          jumpscareImg.style.objectFit = 'cover'; // restore default
+          jumpscareImg.style.transformOrigin = 'center 20%'; // restore default
+          setSrc(jumpscareImg, 'example.png'); // restore default
+          if (jumpscareAudio) { jumpscareAudio.pause(); jumpscareAudio.currentTime = 0; }
+          showGameOver(reason);
+        }, 3000);
+      }, 1000);
+    }
+
+    function drawGhost() {
+      if (!ghostActive) return;
+      if (ghostCamera !== activeCam) return;
+      if (!ghostImg || !ghostImg.complete || ghostImg.naturalWidth === 0) return;
+
+      const canvasW = camCanvas.width;
+      const canvasH = camCanvas.height;
+
+      const img = imgs[activeCam];
+      if (!img || !img.complete) return;
+
+      const ghostSize = canvasH * 0.45; // Increased from 0.3 to 0.45 (50% bigger)
+
+      const baseScale = canvasH / img.naturalHeight;
+      let finalScale = baseScale;
+      if (CAMS[activeCam].zoom) {
+        const camZoomScale = baseScale * CAMS[activeCam].zoom.scale;
+        finalScale = baseScale + (camZoomScale - baseScale) * currentZoomLevel;
+      }
+
+      const displayW = img.naturalWidth * finalScale;
+      const displayH = img.naturalHeight * finalScale;
+
+      const maxScrollX = Math.max(0, displayW - canvasW);
+      const maxScrollY = Math.max(0, displayH - canvasH);
+
+      const offsetX = -(panX / 100) * maxScrollX;
+      const offsetY = -(panY / 100) * maxScrollY;
+
+      const ghostDisplayX = (ghostX / 100) * displayW + offsetX;
+      const ghostDisplayY = (ghostY / 100) * displayH + offsetY;
+
+      if (ghostDisplayX < -ghostSize || ghostDisplayX > canvasW + ghostSize) return;
+
+      ctx.drawImage(
+        ghostImg,
+        ghostDisplayX - ghostSize / 2,
+        ghostDisplayY - ghostSize,
+        ghostSize,
+        ghostSize
+      );
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // BUILD SVG MAP
+    // ═══════════════════════════════════════════════════════════════════════════
+    function buildMap() {
+      const ns = 'http://www.w3.org/2000/svg';
+
+      // Draw corridor edges with double lines
+      EDGES.forEach(([a, b]) => {
+        const na = NODES[a], nb = NODES[b];
+        
+        // Calculate perpendicular offset for double lines
+        const dx = nb.x - na.x;
+        const dy = nb.y - na.y;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        const offsetX = (-dy / len) * 2; // perpendicular offset
+        const offsetY = (dx / len) * 2;
+        
+        // First line
+        const line1 = document.createElementNS(ns, 'line');
+        line1.setAttribute('x1', na.x + offsetX);
+        line1.setAttribute('y1', na.y + offsetY);
+        line1.setAttribute('x2', nb.x + offsetX);
+        line1.setAttribute('y2', nb.y + offsetY);
+        line1.setAttribute('stroke', '#2a4a2a');
+        line1.setAttribute('stroke-width', '2');
+        mapSvg.appendChild(line1);
+        
+        // Second line
+        const line2 = document.createElementNS(ns, 'line');
+        line2.setAttribute('x1', na.x - offsetX);
+        line2.setAttribute('y1', na.y - offsetY);
+        line2.setAttribute('x2', nb.x - offsetX);
+        line2.setAttribute('y2', nb.y - offsetY);
+        line2.setAttribute('stroke', '#2a4a2a');
+        line2.setAttribute('stroke-width', '2');
+        mapSvg.appendChild(line2);
+      });
+
+      // Draw edges to YOU with double lines
+      YOU_EDGES.forEach(edge => {
+        const fromNode = NODES[edge.from];
+        
+        // Calculate perpendicular offset
+        const dx = fromNode.x - YOU_NODE.x;
+        const dy = fromNode.y - YOU_NODE.y;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        const offsetX = (-dy / len) * 2;
+        const offsetY = (dx / len) * 2;
+        
+        // Determine color based on which camera
+        // CAM 1 (index 0) is green, CAM 10 (index 9) is red, CAM 3 (index 2) is red
+        const color = (edge.from === 0) ? '#00ff50' : '#ff3333';
+        
+        // First line
+        const line1 = document.createElementNS(ns, 'line');
+        line1.setAttribute('x1', YOU_NODE.x + offsetX);
+        line1.setAttribute('y1', YOU_NODE.y + offsetY);
+        line1.setAttribute('x2', fromNode.x + offsetX);
+        line1.setAttribute('y2', fromNode.y + offsetY);
+        line1.setAttribute('stroke', color);
+        line1.setAttribute('stroke-width', '2');
+        mapSvg.appendChild(line1);
+        
+        // Second line
+        const line2 = document.createElementNS(ns, 'line');
+        line2.setAttribute('x1', YOU_NODE.x - offsetX);
+        line2.setAttribute('y1', YOU_NODE.y - offsetY);
+        line2.setAttribute('x2', fromNode.x - offsetX);
+        line2.setAttribute('y2', fromNode.y - offsetY);
+        line2.setAttribute('stroke', color);
+        line2.setAttribute('stroke-width', '2');
+        mapSvg.appendChild(line2);
+      });
+
+      // Draw camera nodes
+      NODES.forEach(node => {
+        const { i, x, y } = node;
+        const hw = NODE_W / 2, hh = NODE_H / 2;
+
+        const fo = document.createElementNS(ns, 'foreignObject');
+        fo.setAttribute('x', x - hw);
+        fo.setAttribute('y', y - hh);
+        fo.setAttribute('width', NODE_W);
+        fo.setAttribute('height', NODE_H);
+
+        const div = document.createElement('div');
+        div.className = 'cam-node' + (i === 0 ? ' active' : '');
+        div.dataset.cam = i;
+
+        const shortcut = i < 9 ? (i + 1) : (i === 9 ? '10' : '11');
+        div.innerHTML = `C${i + 1}<span class="shortcut">[${shortcut}]</span>`;
+
+        div.addEventListener('click', () => {
+          playButtonSfx();
+          selectCam(i);
+        });
+        fo.appendChild(div);
+        mapSvg.appendChild(fo);
+      });
+
+      // Draw YOU node
+      const youFo = document.createElementNS(ns, 'foreignObject');
+      youFo.setAttribute('x', YOU_NODE.x - NODE_W / 2);
+      youFo.setAttribute('y', YOU_NODE.y - NODE_H / 2);
+      youFo.setAttribute('width', NODE_W);
+      youFo.setAttribute('height', NODE_H);
+
+      const youDiv = document.createElement('div');
+      youDiv.className = 'you-node';
+      youDiv.innerHTML = '⚠ YOU';
+      youFo.appendChild(youDiv);
+      mapSvg.appendChild(youFo);
+      
+      // Add clickable areas for vent access (narrow lines over corridors, avoiding camera nodes)
+      // VENT 1: Clickable line on CAM 10 to YOU corridor (red)
+      const cam10Node = NODES[9]; // CAM 10 is index 9
+      const vent1Line = document.createElementNS(ns, 'line');
+      // Position line between the nodes, leaving space for the camera buttons
+      const vent1StartX = cam10Node.x + (YOU_NODE.x - cam10Node.x) * 0.2; // Start 20% from cam10
+      const vent1StartY = cam10Node.y + (YOU_NODE.y - cam10Node.y) * 0.2;
+      const vent1EndX = cam10Node.x + (YOU_NODE.x - cam10Node.x) * 0.8; // End 80% toward YOU
+      const vent1EndY = cam10Node.y + (YOU_NODE.y - cam10Node.y) * 0.8;
+      vent1Line.setAttribute('x1', vent1StartX);
+      vent1Line.setAttribute('y1', vent1StartY);
+      vent1Line.setAttribute('x2', vent1EndX);
+      vent1Line.setAttribute('y2', vent1EndY);
+      vent1Line.setAttribute('stroke', 'transparent');
+      vent1Line.setAttribute('stroke-width', '20'); // Thick invisible line for clicking
+      vent1Line.style.cursor = 'pointer';
+      vent1Line.addEventListener('click', () => {
+        playButtonSfx();
+        selectCam(11); // VENT 1 is camera index 11
+      });
+      mapSvg.appendChild(vent1Line);
+      
+      // VENT 2: Clickable line on CAM 3 to YOU corridor (red)
+      const cam3Node = NODES[2]; // CAM 3 is index 2
+      const vent2Line = document.createElementNS(ns, 'line');
+      // Position line between the nodes, leaving space for the camera buttons
+      const vent2StartX = cam3Node.x + (YOU_NODE.x - cam3Node.x) * 0.2; // Start 20% from cam3
+      const vent2StartY = cam3Node.y + (YOU_NODE.y - cam3Node.y) * 0.2;
+      const vent2EndX = cam3Node.x + (YOU_NODE.x - cam3Node.x) * 0.8; // End 80% toward YOU
+      const vent2EndY = cam3Node.y + (YOU_NODE.y - cam3Node.y) * 0.8;
+      vent2Line.setAttribute('x1', vent2StartX);
+      vent2Line.setAttribute('y1', vent2StartY);
+      vent2Line.setAttribute('x2', vent2EndX);
+      vent2Line.setAttribute('y2', vent2EndY);
+      vent2Line.setAttribute('stroke', 'transparent');
+      vent2Line.setAttribute('stroke-width', '20'); // Thick invisible line for clicking
+      vent2Line.style.cursor = 'pointer';
+      vent2Line.addEventListener('click', () => {
+        playButtonSfx();
+        selectCam(12); // VENT 2 is camera index 12
+      });
+      mapSvg.appendChild(vent2Line);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // CAMERA CONTROLS
+    // ═══════════════════════════════════════════════════════════════════════════
+    function selectCam(i) {
+      lastActiveCam = activeCam;
+      activeCam = i;
+      playerOnCamSince = Date.now();
+
+      if (zoomed) toggleZoom(true);
+      panX = 50;
+      panY = 50;
+      camLabel.textContent = CAMS[i].name;
+
+      // If Trump is crawling and player switches to his vent cam, show static
+      if (trump.ventStaticActive && (i === 11 || i === 12)) {
+        camCanvas.classList.add('static');
+        staticOverlay.classList.add('visible');
+      } else {
+        // Clear vent static when switching away
+        if (lastActiveCam === 11 || lastActiveCam === 12) {
+          camCanvas.classList.remove('static');
+          staticOverlay.classList.remove('visible');
+        }
+      }
+
+      if (camOpen && gameState === 'game') {
+        if (CAMS[i].zoom && camPower[i] === 'ON') {
+          zoomBtn.classList.add('visible');
+          zoomBtn.style.pointerEvents = 'auto';
+          zoomBtn.textContent = '⊕ ZOOM';
+        } else {
+          zoomBtn.classList.remove('visible');
+          zoomBtn.style.pointerEvents = 'none';
+        }
+        honkBtn.classList.add('visible');
+        decoyBtn.classList.add('visible');
+      } else {
+        zoomBtn.classList.remove('visible');
+        zoomBtn.style.pointerEvents = 'none';
+        honkBtn.classList.remove('visible');
+        decoyBtn.classList.remove('visible');
+      }
+
+      document.querySelectorAll('.cam-node').forEach(n => {
+        n.classList.toggle('active', parseInt(n.dataset.cam) === i);
+      });
+    }
+
+    function togglePanel() {
+      playButtonSfx();
+      camOpen = !camOpen;
+      console.log(`togglePanel: camOpen changed to ${camOpen}`);
+      if (camOpen) {
+        camWrap.classList.add('visible');
+        panel.classList.add('visible');
+        toggleBtn.textContent = '▼ CAMERAS';
+        elecTrigger.classList.remove('visible');
+      } else {
+        camWrap.classList.remove('visible');
+        panel.classList.remove('visible');
+        toggleBtn.textContent = '▲ CAMERAS';
+        elecTrigger.classList.add('visible');
+        if (zoomed) toggleZoom(true);
+      }
+
+      // Re-apply visibility rules based on the new camOpen state
+      selectCam(activeCam);
+      if (window._computerSyncVisibility) window._computerSyncVisibility();
+    }
+
+    function toggleZoom(forceOff) {
+      if (camPower[activeCam] !== 'ON' && forceOff !== true) return;
+      if (forceOff === true && !zoomed) return;
+
+      playButtonSfx();
+      zoomed = forceOff === true ? false : !zoomed;
+      targetZoomLevel = zoomed ? 1 : 0;
+      playZoomSfx(zoomed);
+      zoomBtn.textContent = zoomed ? '⊖ UNZOOM' : '⊕ ZOOM';
+      if (zoomed) panY = 50;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // HONK
+    // ═══════════════════════════════════════════════════════════════════════════
+    function getLureTarget(honkCam, seekFurther) {
+      const adjacent = ADJACENCY[honkCam] || [];
+      const honkDist = DISTANCE_TO_YOU[honkCam];
+
+      let candidates;
+      if (seekFurther) {
+        candidates = adjacent.filter(cam => DISTANCE_TO_YOU[cam] > honkDist);
+        if (candidates.length === 0) {
+          candidates = adjacent.filter(cam => DISTANCE_TO_YOU[cam] >= honkDist);
+        }
+      } else {
+        candidates = adjacent.filter(cam => DISTANCE_TO_YOU[cam] < honkDist);
+        if (candidates.length === 0) {
+          candidates = adjacent.filter(cam => DISTANCE_TO_YOU[cam] <= honkDist);
+        }
+      }
+
+      if (candidates.length === 0) candidates = adjacent;
+      return candidates[Math.floor(Math.random() * candidates.length)];
+    }
+
+    function updateElecPanel() {
+      // Only count first 11 cameras (exclude vents)
+      const brokenCount = camPower.slice(0, 11).filter(p => p !== 'ON').length;
+      
+      if (brokenCount > 0) {
+        elecStatus.textContent = `${brokenCount} CAMERA${brokenCount > 1 ? 'S' : ''} OFFLINE`;
+        elecResetBtn.disabled = resetInProgress;
+      } else {
+        elecStatus.textContent = 'ALL CAMERAS ONLINE';
+        elecStatus.style.color = '#00ff50';
+        elecStatus.style.textShadow = '0 0 10px #00ff50';
+        elecResetBtn.disabled = true;
+      }
+    }
+
+    function startReset() {
+      if (resetInProgress) return;
+      // Check only first 11 cameras (exclude vents)
+      if (camPower.slice(0, 11).every(p => p === 'ON')) return; // All cameras already on
+      
+      resetInProgress = true;
+      resetStartTime = Date.now();
+      elecResetBtn.disabled = true;
+      elecLoadingBar.classList.add('visible');
+      elecStatus.textContent = 'RESETTING CAMERAS...';
+      
+      updateResetProgress();
+    }
+
+    function updateResetProgress() {
+      if (!resetInProgress) return;
+      
+      const elapsed = Date.now() - resetStartTime;
+      const progress = Math.min(elapsed / RESET_DURATION, 1);
+      const percent = progress * 100;
+      
+      elecLoadingFill.style.width = `${percent}%`;
+      
+      if (progress >= 1) {
+        completeReset();
+      } else {
+        resetAnimationFrame = requestAnimationFrame(updateResetProgress);
+      }
+    }
+
+    function completeReset() {
+      playButtonSfx();
+      
+      // Turn all regular cameras back ON (not vents)
+      for (let i = 0; i < 11; i++) {
+        camPower[i] = 'ON';
+      }
+      
+      // Stop the alarm
+      if (alarmAudio && !alarmAudio.paused) {
+        alarmAudio.pause();
+        alarmAudio.currentTime = 0;
+      }
+      
+      // Reset UI
+      resetInProgress = false;
+      resetStartTime = null;
+      if (resetAnimationFrame) {
+        cancelAnimationFrame(resetAnimationFrame);
+        resetAnimationFrame = null;
+      }
+      
+      elecLoadingBar.classList.remove('visible');
+      elecLoadingFill.style.width = '0%';
+      elecStatus.textContent = 'ALL CAMERAS ONLINE';
+      elecStatus.style.color = '#00ff50';
+      elecStatus.style.textShadow = '0 0 10px #00ff50';
+      elecResetBtn.disabled = true;
+      
+      console.log("All cameras reset!");
+    }
+
+    function triggerOutage() {
+      if (outageActive) return; // Block consecutive outages
+      
+      // Don't trigger outage if ghost is active
+      if (ghostActive) {
+        console.log("Outage blocked - ghost is active");
+        return;
+      }
+      
+      outageActive = true;
+      // Fill only the first 11 cameras with ERROR (exclude vents)
+      for (let i = 0; i < 11; i++) {
+        camPower[i] = 'ERROR';
+      }
+      console.log("POWER OUTAGE TRIGGERED!");
+
+      if (alarmAudio) {
+        alarmAudio.play().catch(() => { });
+      }
+
+      if (zoomed) toggleZoom(true);
+      zoomBtn.classList.remove('visible');
+      zoomBtn.style.pointerEvents = 'none';
+
+      if (elecOverlay.classList.contains('visible')) {
+        updateElecPanel();
+      }
+
+      // Set 30-second cooldown before next outage can trigger
+      if (outageTimeout) clearTimeout(outageTimeout);
+      outageTimeout = setTimeout(() => {
+        outageActive = false;
+        console.log("Outage cooldown ended - next outage can trigger");
+      }, OUTAGE_COOLDOWN);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // OXYGEN SYSTEM
+    // ═══════════════════════════════════════════════════════════════════════════
+    function kickTrumpOutOfVent() {
+      if (trump.crawlTimeout) { clearTimeout(trump.crawlTimeout); trump.crawlTimeout = null; }
+      if (crawlAudio) { crawlAudio.pause(); crawlAudio.currentTime = 0; }
+      trump.ventStaticActive = false;
+      camCanvas.classList.remove('static');
+      staticOverlay.classList.remove('visible');
+      trump.inVent = false;
+      trump.crawlPlayed = false;
+      trump.crawlStartTime = 0;
+      trump.moveCount = 0;
+      const newCam = TRUMP_CAMERAS[Math.floor(Math.random() * TRUMP_CAMERAS.length)];
+      const groundZone = getGroundZone(newCam);
+      trump.camera = newCam;
+      trump.x = 20 + Math.random() * 60;
+      trump.y = groundZone.minY + Math.random() * (groundZone.maxY - groundZone.minY);
+      trump.lastMoveTime = Date.now();
+    }
+
+    function toggleVents() {
+      ventsOpen = !ventsOpen;
+      
+      if (ventsOpen) {
+        // Vents opened - start oxygen refill
+        ventCloseBtn.textContent = 'CLOSE VENTS';
+        ventCloseBtn.classList.remove('closed');
+        startOxygenRefill();
+        console.log("Vents opened - oxygen refilling");
+      } else {
+        // Vents closed - start oxygen drain
+        ventCloseBtn.textContent = 'OPEN VENTS';
+        ventCloseBtn.classList.add('closed');
+        startOxygenDrain();
+        console.log("Vents closed - oxygen draining");
+
+        // If Trump is in the vent at all (waiting OR crawling), closing vents stops him
+        if (trump.inVent && !trump.inRoom) {
+          if (trump.crawlPlayed) {
+            // Already crawling — only stoppable within 3 second window
+            const timeSinceCrawl = Date.now() - trump.crawlStartTime;
+            if (timeSinceCrawl <= 3000) {
+              kickTrumpOutOfVent();
+              console.log('Trump was crawling — stopped in time by vent close!');
+            } else {
+              console.log('Too late — Trump already past the 3 second crawl window!');
+            }
+          } else {
+            // Not crawling yet — closing vents always kicks him out immediately
+            kickTrumpOutOfVent();
+            console.log('Trump was waiting in vent — kicked out before crawl started!');
+          }
+        }
+      }
+    }
+
+    function startOxygenDrain() {
+      if (oxygenInterval) clearInterval(oxygenInterval); // Clear any existing interval
+      
+      oxygenInterval = setInterval(() => {
+        if (gameState !== 'game' || gameOver) {
+          stopOxygen();
+          return;
+        }
+        
+        oxygenLevel = Math.max(0, oxygenLevel - OXYGEN_RATE);
+        updateOxygenUI();
+        
+        if (oxygenLevel <= 0) {
+          stopOxygen();
+          showGameOver("You ran out of oxygen. The vents were closed for too long.");
+        }
+      }, OXYGEN_INTERVAL);
+    }
+
+    function startOxygenRefill() {
+      if (oxygenInterval) clearInterval(oxygenInterval); // Clear any existing interval
+      
+      oxygenInterval = setInterval(() => {
+        if (gameState !== 'game' || gameOver) {
+          stopOxygen();
+          return;
+        }
+        
+        oxygenLevel = Math.min(100, oxygenLevel + OXYGEN_RATE);
+        updateOxygenUI();
+        
+        // Stop refilling when oxygen reaches 100%
+        if (oxygenLevel >= 100) {
+          stopOxygen();
+        }
+      }, OXYGEN_INTERVAL);
+    }
+
+    function stopOxygen() {
+      if (oxygenInterval) {
+        clearInterval(oxygenInterval);
+        oxygenInterval = null;
+      }
+    }
+
+    function updateOxygenUI() {
+      oxygenBarFill.style.width = `${oxygenLevel}%`;
+      oxygenPercentText.textContent = `${Math.round(oxygenLevel)}%`;
+      
+      // Change color based on oxygen level
+      oxygenBarFill.classList.remove('low', 'critical');
+      if (oxygenLevel <= 25) {
+        oxygenBarFill.classList.add('critical');
+      } else if (oxygenLevel <= 50) {
+        oxygenBarFill.classList.add('low');
+      }
+    }
+
+    function resetOxygen() {
+      oxygenLevel = 100;
+      ventsOpen = true;
+      stopOxygen();
+      ventCloseBtn.textContent = 'CLOSE VENTS';
+      ventCloseBtn.classList.remove('closed');
+      updateOxygenUI();
+    }
+
+    function updateRageUI() {
+      const rageFill = document.getElementById('rage-bar-fill');
+      if (!rageFill) return;
+      
+      // Always show rage accumulation, even before Big Stein spawns
+      // Rage bar shows how many seconds have been taken off movement (max 6 seconds)
+      const maxRage = 6; // Maximum 6 seconds can be taken off (floor is 6s movement)
+      const percent = Math.min(100, (bigStein.rageAccumulation / maxRage) * 100);
+      rageFill.style.width = `${percent}%`;
+    }
+
+    function doDecoy() {
+      if (decoyUses <= 0) return;
+      if (bigStein.state !== BIGSTEIN_STATE.AGGRESSIVE && bigStein.state !== BIGSTEIN_STATE.PASSIVE) return;
+
+      decoyUses--;
+      decoyBtn.textContent = `📯 DECOY (${decoyUses})`;
+      if (decoyUses <= 0) decoyBtn.disabled = true;
+
+      // Play a distraction sound over the radio
+      if (honkAudio) {
+        honkAudio.currentTime = 0;
+        honkAudio.play().catch(() => { });
+      }
+
+      console.log("Decoy deployed! Big Stein resets!");
+      const newCam = SPAWN_CAMERAS[Math.floor(Math.random() * SPAWN_CAMERAS.length)];
+      bigStein.rageAccumulation = 0; // Reset rage accumulation
+      console.log("Rage accumulation reset to 0!");
+      updateRageUI();
+
+      triggerAssistedStatic(newCam);
+    }
+
+    function doHonk() {
+      if (honkCooldown) return;
+
+      honkCooldown = true;
+      honkBtn.classList.add('cooldown');
+
+      if (honkAudio) {
+        honkAudio.currentTime = 0;
+        honkAudio.play().catch(() => { });
+      }
+
+      console.log('Honk on CAM ' + (activeCam + 1));
+
+      // ── Trump vent honk ──────────────────────────────────────────────────────
+      // Vent 1 (cam index 11) is between CAM 10 (index 9) and YOU
+      // Vent 2 (cam index 12) is between CAM 3  (index 2) and YOU
+      // Player must have spotted Trump in the vent first (seenInVent = true)
+      if (trump.active && trump.inVent && !trump.inRoom && trump.seenInVent) {
+        const ventCam = trump.ventNumber === 1 ? 11 : 12;   // vent camera index
+        const lureCam = trump.ventNumber === 1 ? 9  : 2;    // CAM 10 or CAM 3
+        if (activeCam === lureCam) {
+          console.log(`Honk lured Trump out of Vent ${trump.ventNumber}! Trump will respawn in bluff mode.`);
+          // Cancel any pending crawl
+          if (trump.crawlTimeout) { clearTimeout(trump.crawlTimeout); trump.crawlTimeout = null; }
+          if (crawlAudio) { crawlAudio.pause(); crawlAudio.currentTime = 0; }
+          // Clear static
+          trump.ventStaticActive = false;
+          camCanvas.classList.remove('static');
+          staticOverlay.classList.remove('visible');
+          // Deactivate Trump and schedule bluff respawn
+          trump.active = false;
+          trump.inVent = false;
+          trump.inRoom = false;
+          trump.seenInVent = false;
+          trump.camera = -1;
+          respawnTrump();
+          setTimeout(() => {
+            honkCooldown = false;
+            honkBtn.classList.remove('cooldown');
+          }, HONK_COOLDOWN_MS);
+          return;
+        }
+      }
+      // ────────────────────────────────────────────────────────────────────────
+
+      if (bigStein.state === BIGSTEIN_STATE.AGGRESSIVE && !bigStein.isInStatic) {
+        // 100% chance to lure Big Stein away toward a farther camera
+        if (true) {
+          const newCam = getLureTarget(bigStein.camera, true);
+          if (newCam !== undefined && newCam !== bigStein.camera) {
+            console.log(`Honk succeeded! Luring Big Stein AWAY to CAM ${newCam + 1}.`);
+            bigStein.rageAccumulation = Math.min(6, bigStein.rageAccumulation + 0.5);
+            updateRageUI();
+            triggerAssistedStatic(newCam);
+          } else {
+            console.log("Honk: no farther camera found, Big Stein stays.");
+          }
+        } else {
+          console.log("Honk failed (15% chance). Big Stein ignores it.");
+        }
+      }
+
+      setTimeout(() => {
+        honkCooldown = false;
+        honkBtn.classList.remove('cooldown');
+      }, HONK_COOLDOWN_MS);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // SCREAMER SCENE
+    // ═══════════════════════════════════════════════════════════════════════════
+    let screamerActive = false;
+    let hideReady = false;
+    let hideTimer = null;
+    let isHiding = false;
+    let spacebarClicks = 0;
+    let spamTimerStart = 0;
+    let spamTimerInterval = null;
+    const REQUIRED_CLICKS = 40;
+    const SPAM_TIME_LIMIT = 5000; // 5 seconds in milliseconds
+
+    // Instant jumpscare when player fails to hide within 5 seconds
+    function triggerInstantJumpscare() {
+      gameState = 'screamer';
+      isHiding = false;
+
+      // Stop all game audio
+      if (backgroundAudio) { backgroundAudio.pause(); backgroundAudio.currentTime = 0; }
+      if (alarmAudio) { alarmAudio.pause(); alarmAudio.currentTime = 0; }
+
+      // Hide all game UI
+      [camWrap, panel, document.getElementById('hud'), screenshotsHud,
+        document.getElementById('controls-hint'), toggleBtn, elecTrigger, elecOverlay].forEach(el => {
+          if (el) el.style.display = 'none';
+        });
+
+      // Ensure hide scene background is turned off during instant jumpscare
+      document.getElementById('hide-scene').classList.remove('visible');
+
+      // Show fullscreen static first
+      const fullscreenStatic = document.getElementById('fullscreen-static');
+      fullscreenStatic.classList.add('visible');
+
+      // Play static sound
+      playCctvLagSfx();
+
+      // After 1 second of static, show jumpscare
+      setTimeout(() => {
+        fullscreenStatic.classList.remove('visible');
+        if (cctvlagAudio) { cctvlagAudio.pause(); cctvlagAudio.currentTime = 0; }
+
+        // Play jumpscare audio
+        if (jumpscareAudio) {
+          jumpscareAudio.volume = 1.0;
+          jumpscareAudio.currentTime = 2;
+          jumpscareAudio.play().catch(() => { });
+        }
+
+        // Show jumpscare image instantly
+        const jumpscareImg = document.getElementById('jumpscare-final');
+        jumpscareImg.style.display = 'block';
+        jumpscareImg.getBoundingClientRect();
+        jumpscareImg.style.transform = 'translate(-50%, -50%) scale(1.0)';
+
+        // After 3 seconds → game over
+        setTimeout(() => {
+          jumpscareImg.style.display = 'none';
+          jumpscareImg.style.transform = 'translate(-50%, -50%) scale(0.1)';
+          if (jumpscareAudio) { jumpscareAudio.pause(); jumpscareAudio.currentTime = 0; }
+          showGameOver('Big Stein found you. You didn\'t hide in time.');
+        }, 3000);
+      }, 1000);
+    }
+
+    // Toggle normal hiding under the desk
+    function toggleHide() {
+      if (camOpen || gameState !== 'game') return;
+
+      const hideScene = document.getElementById('hide-scene');
+      isHiding = !isHiding;
+
+      if (isHiding) {
+        hideScene.classList.add('visible');
+        // Hide standard office elements so they don't overlay
+        [panel, document.getElementById('controls-hint'), toggleBtn, elecTrigger].forEach(el => {
+          if (el) el.style.display = 'none';
+        });
+      } else {
+        hideScene.classList.remove('visible');
+        // Restore standard office elements
+        [panel, document.getElementById('controls-hint'), toggleBtn, elecTrigger].forEach(el => {
+          if (el) el.style.display = 'block';
+        });
+      }
+    }
+
+    // NEW: Start the spam spacebar challenge
+    function startSpamChallenge() {
+      hideReady = false;
+      if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+
+      // Cancel any Trump room challenge that might be running
+      if (trumpHideCountdownInterval) { clearInterval(trumpHideCountdownInterval); trumpHideCountdownInterval = null; }
+      if (trump.roomChallengeTimeout) { clearInterval(trump.roomChallengeTimeout); trump.roomChallengeTimeout = null; }
+      trump.roomChallengeActive = false;
+      trump.inRoom = false;
+      const countdownEl = document.getElementById('trump-hide-countdown');
+      if (countdownEl) countdownEl.textContent = '';
+
+      gameState = 'screamer';
+      screamerActive = true;
+      spacebarClicks = 0;
+      spamTimerStart = Date.now();
+
+      // Stop game audio
+      if (backgroundAudio) { backgroundAudio.pause(); backgroundAudio.currentTime = 0; }
+      if (alarmAudio) { alarmAudio.pause(); alarmAudio.currentTime = 0; }
+
+      // Hide all game UI
+      [camWrap, panel, document.getElementById('hud'), screenshotsHud,
+        document.getElementById('controls-hint'), toggleBtn, elecTrigger, elecOverlay].forEach(el => {
+          if (el) el.style.display = 'none';
+        });
+
+      // Show fullscreen static first
+      const fullscreenStatic = document.getElementById('fullscreen-static');
+      fullscreenStatic.classList.add('visible');
+
+      // Play static sound
+      playCctvLagSfx();
+
+      // After 1 second of static, show the spam challenge
+      setTimeout(() => {
+        fullscreenStatic.classList.remove('visible');
+        if (cctvlagAudio) { cctvlagAudio.pause(); cctvlagAudio.currentTime = 0; }
+
+        // Show screamer scene with office and officestein
+        const screamerScene = document.getElementById('screamer-scene');
+        const officesteinImg = document.getElementById('officestein-img');
+        const spamText = document.getElementById('spam-text');
+        const spamTimer = document.getElementById('spam-timer');
+
+        screamerScene.classList.add('visible');
+        officesteinImg.style.display = 'block';
+        spamText.style.display = 'block';
+        spamTimer.style.display = 'block';
+
+        // Start the timer countdown
+        spamTimerStart = Date.now();
+        spamTimerInterval = setInterval(() => {
+          const elapsed = Date.now() - spamTimerStart;
+          const remaining = Math.max(0, SPAM_TIME_LIMIT - elapsed);
+          const seconds = Math.floor(remaining / 1000);
+          const milliseconds = remaining % 1000;
+          spamTimer.textContent = `${seconds}.${milliseconds.toString().padStart(3, '0')}`;
+
+          // Check if time ran out
+          if (remaining <= 0) {
+            clearInterval(spamTimerInterval);
+            spamTimerInterval = null;
+
+            // Player failed - trigger jumpscare
+            screamerScene.classList.remove('visible');
+            officesteinImg.style.display = 'none';
+            spamText.style.display = 'none';
+            spamTimer.style.display = 'none';
+
+            triggerInstantJumpscare();
+          }
+        }, 10); // Update every 10ms for smooth millisecond display
+      }, 1000);
+    }
+
+    // Handle spacebar clicks during spam challenge
+    function handleSpacebarClick() {
+      if (gameState !== 'screamer' || !spamTimerInterval) return;
+
+      spacebarClicks++;
+      console.log(`Spacebar clicks: ${spacebarClicks}/${REQUIRED_CLICKS}`);
+
+      // Check if player reached required clicks
+      if (spacebarClicks >= REQUIRED_CLICKS) {
+        clearInterval(spamTimerInterval);
+        spamTimerInterval = null;
+
+        // Player succeeded! Hide the spam UI and start walker scene
+        const screamerScene = document.getElementById('screamer-scene');
+        const officesteinImg = document.getElementById('officestein-img');
+        const spamText = document.getElementById('spam-text');
+        const spamTimer = document.getElementById('spam-timer');
+        const fadeOverlay = document.getElementById('fade-overlay');
+
+        screamerScene.classList.remove('visible');
+        officesteinImg.style.display = 'none';
+        spamText.style.display = 'none';
+        spamTimer.style.display = 'none';
+
+        // Fade to black transition
+        fadeOverlay.classList.add('fade-in');
+
+        setTimeout(() => {
+          // Fade back to normal
+          fadeOverlay.classList.remove('fade-in');
+          console.log('Player successfully hid! Starting walker scene...');
+          triggerHideWalkerScene();
+        }, 500);
+      }
+    }
+
+    // Player pressed E in time (or was already hiding) — start the walker sequence
+    function triggerHideWalkerScene() {
+      hideReady = false;
+      if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+
+      gameState = 'screamer';
+      isHiding = true;
+
+      // Stop game audio
+      if (backgroundAudio) { backgroundAudio.pause(); backgroundAudio.currentTime = 0; }
+      if (alarmAudio) { alarmAudio.pause(); alarmAudio.currentTime = 0; }
+
+      // Hide all game UI
+      [camWrap, panel, document.getElementById('hud'), screenshotsHud,
+        document.getElementById('controls-hint'), toggleBtn, elecTrigger, elecOverlay].forEach(el => {
+          if (el) el.style.display = 'none';
+        });
+
+      // Show hide scene directly (no screamer-scene / knocking)
+      const hideScene = document.getElementById('hide-scene');
+      hideScene.classList.add('visible');
+
+      // Play heartbeat sound (loops for the rest of the sequence)
+      if (heartbeatAudio) {
+        heartbeatAudio.volume = 0.8;
+        heartbeatAudio.currentTime = 0;
+        heartbeatAudio.play().catch(() => { });
+      }
+
+      // Play doorkick sound
+      if (doorKickAudio) {
+        doorKickAudio.volume = 1.0;
+        doorKickAudio.currentTime = 0;
+        doorKickAudio.play().catch(() => { });
+      }
+
+      // Start walker animation after 0.5s
+      setTimeout(() => startWalkerAnimation(), 500);
+    }
+
+    // Shared jumpscare function used by the walker sequence
+    function triggerFinalJumpscare() {
+      const walker = document.getElementById('walker');
+      const jumpscareImg = document.getElementById('jumpscare-final');
+
+      // Hide the walker
+      if (walker) walker.style.display = 'none';
+      if (walkingSfxAudio) { walkingSfxAudio.pause(); walkingSfxAudio.currentTime = 0; }
+
+      // DO NOT show jumpscare image - just end the scene
+      // Stop all audio
+      if (heartbeatAudio) { heartbeatAudio.pause(); heartbeatAudio.currentTime = 0; }
+      if (jumpscareAudio) { jumpscareAudio.pause(); jumpscareAudio.currentTime = 0; }
+      if (walkingSfxAudio) { walkingSfxAudio.pause(); walkingSfxAudio.currentTime = 0; }
+
+      document.getElementById('hide-scene').classList.remove('visible');
+      showGameOver('Big Stein found you. You should have used your tools more wisely.');
+    }
+
+    function startWalkerAnimation() {
+      const walker = document.getElementById('walker');
+      const jumpscareImg = document.getElementById('jumpscare-final');
+      if (!walker || !jumpscareImg) return;
+
+      const screenW = window.innerWidth;
+      const walkDuration = 8000; // 8 seconds walk
+
+      if (walkingSfxAudio) {
+        walkingSfxAudio.volume = 1.0;
+      }
+
+      // Phase 1: walkingright.png — enters from left, walks straight to the right
+      walker.style.transition = 'none';
+      setSrc(walker, 'walkingright.png');
+      walker.style.display = 'block';
+      walker.style.left = '-400px';
+      walker.style.right = '';
+      walker.style.transform = '';
+
+      // Force reflow
+      walker.getBoundingClientRect();
+
+      // Start walking SFX
+      if (walkingSfxAudio) {
+        walkingSfxAudio.currentTime = 0;
+        walkingSfxAudio.play().catch(() => { });
+      }
+
+      // Walk left → right linearly
+      walker.style.transition = `left ${walkDuration}ms linear`;
+      walker.style.left = (screenW / 2 - 200) + 'px';
+
+      setTimeout(() => {
+        // Reached center — pause 1.5 seconds
+        if (walkingSfxAudio) walkingSfxAudio.pause();
+
+        setTimeout(() => {
+          // Phase 2: walkingleft.png — walks straight to the left
+          walker.style.transition = 'none';
+          setSrc(walker, 'walkingleft.png');
+          walker.style.left = '';
+          walker.style.right = '-400px';
+          walker.style.transform = '';
+
+          // Force reflow
+          walker.getBoundingClientRect();
+
+          if (walkingSfxAudio) {
+            walkingSfxAudio.currentTime = 0;
+            walkingSfxAudio.play().catch(() => { });
+          }
+
+          walker.style.transition = `right ${walkDuration}ms linear`;
+          walker.style.right = (screenW - 600) + 'px';
+
+          // After walker finishes walking left, trigger the win sequence
+          setTimeout(() => {
+            triggerWinSequence();
+          }, walkDuration);
+
+        }, 1500);
+      }, walkDuration);
+    }
+
+    function triggerWinSequence() {
+      const walker = document.getElementById('walker');
+      const hideScene = document.getElementById('hide-scene');
+      const gameDiv = document.getElementById('game');
+
+      // Hide walker and hide scene
+      if (walker) walker.style.display = 'none';
+      hideScene.classList.remove('visible');
+      gameDiv.style.display = 'none';
+      if (walkingSfxAudio) { walkingSfxAudio.pause(); walkingSfxAudio.currentTime = 0; }
+      if (heartbeatAudio) { heartbeatAudio.pause(); heartbeatAudio.currentTime = 0; }
+
+      // Phase 1: Static noise for 2.5 seconds
+      const fullscreenStatic = document.getElementById('fullscreen-static');
+      fullscreenStatic.classList.add('visible');
+      playCctvLagSfx();
+
+      setTimeout(() => {
+        fullscreenStatic.classList.remove('visible');
+        if (cctvlagAudio) { cctvlagAudio.pause(); cctvlagAudio.currentTime = 0; }
+
+        // Phase 2: Black screen for 5 seconds with heartbeat
+        document.body.style.background = '#000';
+
+        if (heartbeatAudio) {
+          heartbeatAudio.volume = 0.8;
+          heartbeatAudio.currentTime = 0;
+          heartbeatAudio.play().catch(() => { });
+        }
+
+        setTimeout(() => {
+          // Phase 3: Show "YOU WON" text with static background for 2.5 seconds
+          if (heartbeatAudio) { heartbeatAudio.pause(); heartbeatAudio.currentTime = 0; }
+
+          // Show static background
+          fullscreenStatic.classList.add('visible');
+
+          const wonText = document.createElement('div');
+          wonText.style.position = 'fixed';
+          wonText.style.top = '50%';
+          wonText.style.left = '50%';
+          wonText.style.transform = 'translate(-50%, -50%)';
+          wonText.style.color = '#00ff50';
+          wonText.style.fontSize = '72px';
+          wonText.style.fontFamily = "'Courier New', monospace";
+          wonText.style.textShadow = '0 0 30px #00ff50';
+          wonText.style.zIndex = '301';
+          wonText.style.fontWeight = 'bold';
+          wonText.textContent = 'YOU WON!';
+          document.body.appendChild(wonText);
+
+          // After 2.5 seconds, show jumpscare
+          setTimeout(() => {
+            fullscreenStatic.classList.remove('visible');
+            document.body.removeChild(wonText);
+
+            // Play jumpscare audio
+            if (jumpscareAudio) {
+              jumpscareAudio.volume = 1.0;
+              jumpscareAudio.currentTime = 2;
+              jumpscareAudio.play().catch(() => { });
+            }
+
+            // Show jumpscare image
+            const jumpscareImg = document.getElementById('jumpscare-final');
+            jumpscareImg.style.display = 'block';
+            jumpscareImg.getBoundingClientRect();
+            jumpscareImg.style.transform = 'translate(-50%, -50%) scale(1.0)';
+
+            // After 3 seconds → YOU SURVIVED
+            setTimeout(() => {
+              jumpscareImg.style.display = 'none';
+              jumpscareImg.style.transform = 'translate(-50%, -50%) scale(0.1)';
+              if (jumpscareAudio) { jumpscareAudio.pause(); jumpscareAudio.currentTime = 0; }
+              document.body.style.background = '';
+
+              // Show survived screen
+              survDiv.style.display = 'flex';
+              finalScreenshots.textContent = screenshots;
+            }, 3000);
+          }, 2500);
+        }, 5000);
+      }, 2500);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // SCREENSHOT
+    // ═══════════════════════════════════════════════════════════════════════════
+    function updateScreenshotHUD() {
+      const steinMark  = capturedBigStein ? '✓' : '✗';
+      const trumpMark  = capturedTrump    ? '✓' : '✗';
+      const ghostMark  = capturedGhost    ? '✓' : '✗';
+      screenshotsHud.textContent =
+        `PHOTOS: BigStein[${steinMark}] Trump[${trumpMark}] Ghost[${ghostMark}]  ${screenshots}/${REQUIRED_SCREENSHOTS}`;
+    }
+
+    function takeScreenshot() {
+      if (!camOpen) return;
+
+      // Start the night timer on first screenshot
+      if (nightStart === null) {
+        nightStart = Date.now();
+        console.log('Night timer started!');
+      }
+
+      console.log(`[SCREENSHOT] activeCam=${activeCam} bigStein.camera=${bigStein.camera} bigStein.state=${bigStein.state} bigStein.isInStatic=${bigStein.isInStatic} ghostActive=${ghostActive} ghostCamera=${ghostCamera} trump.camera=${trump.camera} trump.inVent=${trump.inVent}`);
+
+      // ── Big Stein screenshot ─────────────────────────────────────────────────
+      // Capture him whether passive or aggressive, as long as he's on this camera.
+      // We intentionally ignore isInStatic so the player can still capture him
+      // even if a static transition is in progress.
+      const bigSteinVisible = (bigStein.state === BIGSTEIN_STATE.AGGRESSIVE || bigStein.state === BIGSTEIN_STATE.PASSIVE)
+        && bigStein.camera === activeCam;
+
+      if (bigSteinVisible) {
+        playScreenshotSfx();
+        camCanvas.style.filter = 'brightness(3)';
+        setTimeout(() => { camCanvas.style.filter = ''; }, 100);
+        if (!capturedBigStein) {
+          capturedBigStein = true;
+          screenshots++;
+          console.log('Big Stein captured!');
+          updateScreenshotHUD();
+          showCaptureFlash('BIG STEIN CAPTURED!');
+        } else {
+          showCaptureFlash('BIG STEIN ALREADY CAPTURED');
+        }
+        // Provoke Big Stein
+        if (!bigStein.isInStatic) {
+          if (bigStein.state === BIGSTEIN_STATE.AGGRESSIVE) {
+            bigStein.rageAccumulation = Math.min(6, bigStein.rageAccumulation + 1);
+            updateRageUI();
+            triggerStaticAndMoveCloser(true);
+          } else if (bigStein.state === BIGSTEIN_STATE.PASSIVE) {
+            bigStein.rageAccumulation = Math.min(6, bigStein.rageAccumulation + 0.5);
+            updateRageUI();
+            triggerAggressive();
+          }
+        }
+        return;
+      }
+
+      // ── Trump screenshot (must be on a regular camera, not in vent) ──────────
+      if (trump.active && !trump.inVent && !trump.inRoom && trump.camera === activeCam) {
+        playScreenshotSfx();
+        camCanvas.style.filter = 'brightness(3)';
+        setTimeout(() => { camCanvas.style.filter = ''; }, 100);
+        if (!capturedTrump) {
+          capturedTrump = true;
+          screenshots++;
+          console.log('Trump captured!');
+          updateScreenshotHUD();
+          showCaptureFlash('TRUMP CAPTURED!');
+        } else {
+          showCaptureFlash('TRUMP ALREADY CAPTURED');
+        }
+        return;
+      }
+
+      // ── Ghost (Steven Hawking) screenshot ────────────────────────────────────
+      if (ghostActive && ghostCamera === activeCam) {
+        playScreenshotSfx();
+        camCanvas.style.filter = 'brightness(3)';
+        setTimeout(() => { camCanvas.style.filter = ''; }, 100);
+        if (!capturedGhost) {
+          capturedGhost = true;
+          screenshots++;
+          console.log('Ghost captured!');
+          updateScreenshotHUD();
+          showCaptureFlash('GHOST CAPTURED!');
+          // Clicking the ghost also counts as defeating it
+          clickGhost();
+        } else {
+          showCaptureFlash('GHOST ALREADY CAPTURED');
+        }
+        return;
+      }
+
+      // ── Wrong target / empty camera ──────────────────────────────────────────
+      playScreenshotSfx();
+      camCanvas.style.filter = 'brightness(3)';
+      setTimeout(() => { camCanvas.style.filter = ''; }, 100);
+      showCaptureFlash('NOTHING TO CAPTURE');
+    }
+
+    function showCaptureFlash(msg) {
+      let el = document.getElementById('capture-flash');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'capture-flash';
+        el.style.cssText = `
+          position: fixed; top: 30%; left: 50%;
+          transform: translate(-50%, -50%);
+          color: #ffdd00; font-family: 'Courier New', monospace;
+          font-size: 28px; font-weight: bold;
+          text-shadow: 0 0 20px #ffdd00;
+          text-align: center; pointer-events: none; z-index: 300;
+          transition: opacity 0.5s ease;
+        `;
+        document.getElementById('stage').appendChild(el);
+      }
+      el.textContent = msg;
+      el.style.opacity = '1';
+      clearTimeout(el._fadeTimer);
+      el._fadeTimer = setTimeout(() => { el.style.opacity = '0'; }, 1500);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // RENDERING
+    // ═══════════════════════════════════════════════════════════════════════════
+    function resizeCanvas() {
+      const wrap = document.getElementById('cam-wrap');
+      if (!wrap) return;
+      const w = wrap.clientWidth;
+      const h = wrap.clientHeight;
+      if (w > 0 && h > 0 && (camCanvas.width !== w || camCanvas.height !== h)) {
+        camCanvas.width = w;
+        camCanvas.height = h;
+      }
+    }
+
+    function updatePan() {
+      if (!camOpen || gameState !== 'game') return;
+      
+      // Don't allow panning on vent cameras
+      if (CAMS[activeCam] && CAMS[activeCam].noPan) return;
+
+      if (keysPressed.ArrowLeft) panX = Math.max(0, panX - PAN_SPEED);
+      if (keysPressed.ArrowRight) panX = Math.min(100, panX + PAN_SPEED);
+
+      if (zoomed) {
+        if (keysPressed.ArrowUp) panY = Math.max(0, panY - PAN_SPEED);
+        if (keysPressed.ArrowDown) panY = Math.min(100, panY + PAN_SPEED);
+      }
+    }
+
+    function drawCamera() {
+      // Sync canvas internal resolution with its CSS layout size
+      resizeCanvas();
+
+      const canvasW = camCanvas.width;
+      const canvasH = camCanvas.height;
+
+      // Safety: if canvas has no dimensions yet, skip this frame
+      if (canvasW === 0 || canvasH === 0) return;
+
+      // Always clear with black background first
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvasW, canvasH);
+
+      if (camPower[activeCam] === 'ON') {
+        // Check if Trump is in a vent and we're viewing that vent
+        let img;
+        if (trump.inVent && activeCam === 11 && trump.ventNumber === 1 && trumpVent1Img) {
+          img = trumpVent1Img; // Use trumpvent1.png for VENT 1
+          trump.seenInVent = true; // Player is watching Trump's vent
+        } else if (trump.inVent && activeCam === 12 && trump.ventNumber === 2 && trumpVent2Img) {
+          img = trumpVent2Img; // Use trumpvent2.png for VENT 2
+          trump.seenInVent = true; // Player is watching Trump's vent
+        } else {
+          img = imgs[activeCam]; // Use normal camera image
+        }
+
+        if (img && img.naturalWidth > 0 && img.naturalHeight > 0) {
+          const imgW = img.naturalWidth;
+          const imgH = img.naturalHeight;
+
+          // For vent cameras, scale to fit width instead of height to avoid black bars
+          let baseScale;
+          if (CAMS[activeCam].noPan) {
+            // Scale to cover the entire canvas (use the larger scale factor)
+            const scaleW = canvasW / imgW;
+            const scaleH = canvasH / imgH;
+            baseScale = Math.max(scaleW, scaleH); // Use max to ensure full coverage
+          } else {
+            // Normal cameras: scale by height
+            baseScale = canvasH / imgH;
+          }
+          
+          let finalScale = baseScale;
+
+          if (CAMS[activeCam].zoom) {
+            const camZoomScale = baseScale * CAMS[activeCam].zoom.scale;
+            finalScale = baseScale + (camZoomScale - baseScale) * currentZoomLevel;
+          }
+
+          const displayW = imgW * finalScale;
+          const displayH = imgH * finalScale;
+
+          const maxScrollX = Math.max(0, displayW - canvasW);
+          const maxScrollY = Math.max(0, displayH - canvasH);
+
+          // For vent cameras (noPan), always center the image
+          let effectivePanX = panX;
+          let effectivePanY = panY;
+          if (CAMS[activeCam].noPan) {
+            effectivePanX = 50;
+            effectivePanY = 50;
+          }
+
+          const offsetX = -(effectivePanX / 100) * maxScrollX;
+          const offsetY = -(effectivePanY / 100) * maxScrollY;
+
+          ctx.drawImage(img, 0, 0, imgW, imgH, offsetX, offsetY, displayW, displayH);
+          drawBigStein();
+          drawTrump();
+          drawGhost();
+          drawCueNumbers();
+        } else {
+          ctx.fillStyle = '#ffdd00';
+          ctx.font = '24px Courier New';
+          ctx.textAlign = 'center';
+          ctx.fillText('CAMERA BOOTING...', canvasW / 2, canvasH / 2);
+        }
+      } else {
+        // Render artificial static for signal lost
+        ctx.fillStyle = '#111';
+        ctx.fillRect(0, 0, canvasW, canvasH);
+
+        const staticResW = Math.min(canvasW, 400);
+        const staticResH = Math.min(canvasH, 300);
+
+        const imgData = ctx.createImageData(staticResW, staticResH);
+        const data = imgData.data;
+        for (let i = 0; i < data.length; i += 4) {
+          const p = Math.random() * 80;
+          data[i] = p; data[i + 1] = p; data[i + 2] = p; data[i + 3] = 255;
+        }
+
+        const memCanvas = document.createElement('canvas');
+        memCanvas.width = staticResW; memCanvas.height = staticResH;
+        memCanvas.getContext('2d').putImageData(imgData, 0, 0);
+        ctx.drawImage(memCanvas, 0, 0, canvasW, canvasH);
+
+        ctx.fillStyle = '#ff3333';
+        ctx.font = 'bold 36px Courier New';
+        ctx.textAlign = 'center';
+        ctx.fillText('SIGNAL LOST', canvasW / 2, canvasH / 2);
+      }
+
+      if (panInd) panInd.style.left = panX + '%';
+    }
+
+    function updateHUD() {
+      if (gameState !== 'game' || gameOver) return;
+      // Timer removed — no win/lose condition based on time
+    }
+
+    function loop() {
+      if (gameState === 'game' && !gameOver && !survived) {
+        spawnBigStein();
+        spawnTrump();
+        updateBigSteinPassive();
+        updateTrump();
+        updateBigSteinAggressive();
+        updateRageUI(); // Update rage bar every frame
+      }
+
+      // Animate zoom
+      if (currentZoomLevel < targetZoomLevel) {
+        currentZoomLevel = Math.min(1, currentZoomLevel + 0.033);
+      } else if (currentZoomLevel > targetZoomLevel) {
+        currentZoomLevel = Math.max(0, currentZoomLevel - 0.033);
+      }
+
+      updatePan();
+      if (camOpen && gameState === 'game') {
+        drawCamera();
+      }
+      updateHUD();
+      requestAnimationFrame(loop);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // EVENTS
+    // ═══════════════════════════════════════════════════════════════════════════
+    startBtn.addEventListener('mousedown', () => {
+      playButtonSfx();
+      lobby.classList.remove('visible');
+      showStoryline();
+    });
+
+    skipBtn.addEventListener('mousedown', () => {
+      playButtonSfx();
+      startGame();
+    });
+
+    elecTrigger.addEventListener('mousedown', () => {
+      if (gameState !== 'game' || camOpen) return;
+      playButtonSfx();
+      updateElecPanel();
+      elecOverlay.classList.add('visible');
+    });
+
+    elecResetBtn.addEventListener('mousedown', () => {
+      playButtonSfx();
+      startReset();
+    });
+
+    ventCloseBtn.addEventListener('mousedown', () => {
+      playButtonSfx();
+      toggleVents();
+    });
+
+    elecClose.addEventListener('mousedown', () => {
+      playButtonSfx();
+      elecOverlay.classList.remove('visible');
+      
+      // Cancel reset if in progress
+      if (resetInProgress) {
+        resetInProgress = false;
+        if (resetAnimationFrame) {
+          cancelAnimationFrame(resetAnimationFrame);
+          resetAnimationFrame = null;
+        }
+        elecLoadingBar.classList.remove('visible');
+        elecLoadingFill.style.width = '0%';
+        elecStatus.textContent = 'CAMERAS OFFLINE';
+        elecStatus.style.color = '#ff3333';
+        elecStatus.style.textShadow = '0 0 10px #ff3333';
+      }
+    });
+
+    honkBtn.addEventListener('mousedown', doHonk);
+    decoyBtn.addEventListener('mousedown', doDecoy);
+    zoomBtn.addEventListener('mousedown', toggleZoom);
+    toggleBtn.addEventListener('mousedown', togglePanel);
+    retryBtn.addEventListener('mousedown', retryGame);
+
+    // Notes panel
+    document.getElementById('notes-btn').addEventListener('mousedown', () => {
+      playButtonSfx();
+      document.getElementById('notes-overlay').classList.add('visible');
+      document.getElementById('notes-textarea').focus();
+    });
+
+    document.getElementById('notes-close').addEventListener('mousedown', () => {
+      playButtonSfx();
+      document.getElementById('notes-overlay').classList.remove('visible');
+    });
+
+    // ── Computer / Terminal logic ─────────────────────────────────────────────
+    (function () {
+      const powerBtn     = document.getElementById('computer-power-btn');
+      const bootDiv      = document.getElementById('computer-boot');
+      const bootBar      = document.getElementById('computer-boot-bar');
+      const bootLabel    = document.getElementById('computer-boot-label');
+      const screenZone   = document.getElementById('computer-screen-zone');
+      const terminal     = document.getElementById('computer-terminal');
+      const computeBtn   = document.getElementById('terminal-compute');
+      const termOutput   = document.getElementById('terminal-output');
+      const termClose    = document.getElementById('terminal-close');
+      const inputA       = document.getElementById('terminal-a');
+      const inputB       = document.getElementById('terminal-b');
+      const inputC       = document.getElementById('terminal-c');
+
+      let booted = false;
+      let booting = false;
+      let bootRaf = null;
+
+      // Only show power button when cameras are closed (player is in the room)
+      // It's always visible in the room view — hide it when cam panel is open
+      function syncVisibility() {
+        if (camOpen || gameState !== 'game') {
+          powerBtn.style.display = 'none';
+          screenZone.classList.remove('ready');
+          terminal.classList.remove('visible');
+        } else {
+          powerBtn.style.display = booted ? 'none' : 'block';
+          if (booted) screenZone.classList.add('ready');
+        }
+      }
+
+      // Hook into togglePanel so visibility updates when cameras open/close
+      const _origTogglePanel = togglePanel;
+      window._computerSyncVisibility = syncVisibility;
+
+      // Power button click — boot sequence
+      powerBtn.addEventListener('mousedown', () => {
+        if (booting || booted) return;
+        booting = true;
+        powerBtn.disabled = true;
+        playButtonSfx();
+
+        bootDiv.classList.add('visible');
+        bootLabel.textContent = 'BOOTING...';
+        bootBar.style.width = '0%';
+
+        const BOOT_MS = 3000;
+        const start = Date.now();
+
+        function animateBoot() {
+          const elapsed = Date.now() - start;
+          const pct = Math.min(elapsed / BOOT_MS * 100, 100);
+          bootBar.style.width = pct + '%';
+
+          if (pct < 100) {
+            bootRaf = requestAnimationFrame(animateBoot);
+          } else {
+            // Done
+            booting = false;
+            booted = true;
+            bootLabel.textContent = 'READY';
+            bootBar.style.background = '#00ff50';
+            powerBtn.style.display = 'none';
+            screenZone.classList.add('ready');
+            setTimeout(() => {
+              bootDiv.classList.remove('visible');
+            }, 1200);
+          }
+        }
+        bootRaf = requestAnimationFrame(animateBoot);
+      });
+
+      // Click on monitor screen — open terminal
+      screenZone.addEventListener('click', () => {
+        if (!booted) return;
+        playButtonSfx();
+        termOutput.textContent = '';
+        inputA.value = '';
+        inputB.value = '';
+        inputC.value = '';
+        terminal.classList.add('visible');
+        inputA.focus();
+      });
+
+      // Compute button
+      computeBtn.addEventListener('mousedown', () => {
+        playButtonSfx();
+        const a = parseInt(inputA.value);
+        const b = parseInt(inputB.value);
+        const c = parseInt(inputC.value);
+
+        if (isNaN(a) || isNaN(b) || isNaN(c)) {
+          termOutput.textContent = 'ERROR: MISSING INPUT';
+          termOutput.style.color = '#ff3333';
+          return;
+        }
+
+        // Get the 3 valid cue values for this game
+        const validValues = cueNumbers.map(n => n.value);
+
+        // All 3 inputs must be valid cue numbers from this game
+        const inputs = [a, b, c];
+        const invalid = inputs.filter(v => !validValues.includes(v));
+        if (invalid.length > 0) {
+          termOutput.textContent = 'ERROR: INVALID INPUT';
+          termOutput.style.color = '#ff3333';
+          return;
+        }
+
+        // Each input must be a different cue number (no repeats)
+        const unique = new Set(inputs);
+        if (unique.size < 3) {
+          termOutput.textContent = 'ERROR: DUPLICATE VALUES';
+          termOutput.style.color = '#ff3333';
+          return;
+        }
+
+        const result = Math.floor((a + b) / c);
+        const hintMap = { 1: 'chest', 3: 'lamp', 5: 'box', 6: 'shelf', 7: 'drawer' };
+        const hint = hintMap[result];
+        termOutput.style.color = '#00ff50';
+        if (hint) {
+          termOutput.textContent = `> CAM #${result} — check notes`;
+          // Write hint into notes if not already there
+          const notesArea = document.getElementById('notes-textarea');
+          const hintLine = `[CAM ${result}] Look for the ${hint}`;
+          if (!notesArea.value.includes(hintLine)) {
+            notesArea.value += (notesArea.value ? '\n' : '') + hintLine;
+          }
+        } else {
+          termOutput.textContent = `> CAM #${result}`;
+        }
+      });
+
+      // Close terminal
+      termClose.addEventListener('mousedown', () => {
+        playButtonSfx();
+        terminal.classList.remove('visible');
+      });
+
+      // Reset computer state on game retry
+      const _origRetryGame = retryGame;
+      window._computerReset = function () {
+        booted = false;
+        booting = false;
+        if (bootRaf) { cancelAnimationFrame(bootRaf); bootRaf = null; }
+        bootDiv.classList.remove('visible');
+        bootBar.style.width = '0%';
+        bootBar.style.background = '#00ff50';
+        bootLabel.textContent = 'BOOTING...';
+        screenZone.classList.remove('ready');
+        terminal.classList.remove('visible');
+        powerBtn.disabled = false;
+        powerBtn.style.display = 'none'; // hidden until cameras close
+        termOutput.textContent = '';
+      };
+
+      // Initial state — hidden until game starts and cameras close
+      powerBtn.style.display = 'none';
+
+      // Expose sync so togglePanel can call it directly
+      window._computerSyncVisibility = function() {
+        if (gameState !== 'game' || gameOver) return;
+        if (!camOpen && !booted && !booting) {
+          powerBtn.style.display = 'block';
+        } else if (camOpen) {
+          powerBtn.style.display = 'none';
+          terminal.classList.remove('visible');
+        }
+      };
+    })();
+
+    // Canvas click for ghost and cue numbers
+    camCanvas.addEventListener('click', (e) => {
+      if (!camOpen) return;
+
+      const rect = camCanvas.getBoundingClientRect();
+      const scaleX = camCanvas.width  / rect.width;
+      const scaleY = camCanvas.height / rect.height;
+      const clickX = (e.clientX - rect.left) * scaleX;
+      const clickY = (e.clientY - rect.top)  * scaleY;
+
+      // Try collecting a cue number first
+      if (tryClickCueNumber(clickX, clickY)) return;
+
+      // Ghost click
+      if (!ghostActive) return;
+      if (activeCam !== ghostCamera) return;
+
+      const canvasW = camCanvas.width;
+      const canvasH = camCanvas.height;
+
+      const img = imgs[activeCam];
+      if (!img || !img.complete) return;
+
+      const ghostSize = canvasH * 0.45;
+
+      const baseScale = canvasH / img.naturalHeight;
+      let finalScale = baseScale;
+      if (CAMS[activeCam].zoom) {
+        const camZoomScale = baseScale * CAMS[activeCam].zoom.scale;
+        finalScale = baseScale + (camZoomScale - baseScale) * currentZoomLevel;
+      }
+
+      const displayW = img.naturalWidth * finalScale;
+      const displayH = img.naturalHeight * finalScale;
+
+      const maxScrollX = Math.max(0, displayW - canvasW);
+      const maxScrollY = Math.max(0, displayH - canvasH);
+
+      const offsetX = -(panX / 100) * maxScrollX;
+      const offsetY = -(panY / 100) * maxScrollY;
+
+      const ghostDisplayX = (ghostX / 100) * displayW + offsetX;
+      const ghostDisplayY = (ghostY / 100) * displayH + offsetY;
+
+      // Check if click is within ghost bounds
+      const dx = clickX - ghostDisplayX;
+      const dy = clickY - (ghostDisplayY - ghostSize / 2);
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance < ghostSize / 2) {
+        clickGhost();
+      }
+    });
+
+    window.addEventListener('keydown', e => {
+      // Spacebar: spam challenge during screamer scene
+      if (e.key === ' ' || e.code === 'Space') {
+        if (gameState === 'screamer' && spamTimerInterval) {
+          e.preventDefault();
+          handleSpacebarClick();
+          return;
+        }
+      }
+
+      // Escape: close cameras if open
+      if (e.key === 'Escape' && gameState === 'game' && camOpen) {
+        playButtonSfx();
+        togglePanel();
+        return;
+      }
+
+      // E key: hide mechanics
+      if ((e.key === 'e' || e.key === 'E') && !camOpen) {
+        if (gameState === 'screamer') return; // Cannot toggle during death sequence
+        if (hideReady) {
+          triggerHideWalkerScene(); // Start Big Stein death walker sequence
+        } else if (gameState === 'game') {
+          toggleHide(); // Just toggle hiding under desk on/off normally
+        }
+        return;
+      }
+
+      if (gameState !== 'game') return;
+
+      if (e.key in keysPressed) {
+        keysPressed[e.key] = true;
+        e.preventDefault();
+        return;
+      }
+
+      if (e.key === 's' || e.key === 'S') {
+        takeScreenshot();
+        return;
+      }
+
+      if (e.key === 'h' || e.key === 'H') {
+        doHonk();
+        return;
+      }
+
+      if (e.key >= '0' && e.key <= '9') {
+        const now = Date.now();
+
+        if (now - lastNumberTime < QUICK_PRESS_DELAY) {
+          if (lastNumberKey === '1' && e.key === '0') {
+            playButtonSfx();
+            selectCam(9);
+            lastNumberKey = '';
+            return;
+          }
+          if (lastNumberKey === '1' && e.key === '1') {
+            playButtonSfx();
+            selectCam(10);
+            lastNumberKey = '';
+            return;
+          }
+        }
+
+        if (e.key >= '1' && e.key <= '9') {
+          const camIndex = parseInt(e.key) - 1;
+          if (camIndex < CAMS.length) {
+            lastNumberKey = e.key;
+            lastNumberTime = now;
+
+            setTimeout(() => {
+              if (lastNumberKey === e.key) {
+                playButtonSfx();
+                selectCam(camIndex);
+                lastNumberKey = '';
+              }
+            }, QUICK_PRESS_DELAY);
+          }
+        } else {
+          lastNumberKey = e.key;
+          lastNumberTime = now;
+        }
+      }
+    });
+
+    window.addEventListener('keyup', e => {
+      if (e.key in keysPressed) {
+        keysPressed[e.key] = false;
+      }
+    });
+
+    window.addEventListener('resize', resizeCanvas);
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // INIT
+    // ═══════════════════════════════════════════════════════════════════════════
+    async function init() {
+      console.log('init: Starting initialization...');
+      buildMap();
+      console.log('init: Map built, loading assets...');
+      await loadAll();
+      console.log('init: All assets loaded, showing lobby');
+
+      loader.classList.add('done');
+      lobby.classList.add('visible');
+      gameState = 'lobby';
+
+      startBackgroundMusic();
+
+      requestAnimationFrame(loop);
+      console.log('init: Initialization complete, game loop started');
+    }
+
+    init();
+  </script>
+</body>
+
+</html>
