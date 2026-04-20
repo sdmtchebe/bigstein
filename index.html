@@ -384,13 +384,320 @@
       display: block;
     }
 
+    /* Flashlight overlay - CSS-based darkness with radial gradient */
+    #flashlight-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+      background: radial-gradient(circle 250px at 50% 50%, transparent 0%, rgba(0,0,0,0.98) 100%);
+      display: none;
+    }
+
+    #flashlight-overlay.active {
+      display: block;
+    }
+
+    /* Access Card on cameras */
+    .access-card {
+      position: absolute;
+      width: 30px;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid #ccc;
+      cursor: pointer;
+      z-index: 5;
+      box-shadow: 0 0 5px rgba(255,255,255,0.5);
+    }
+
+    .access-card:hover {
+      background: rgba(255, 255, 255, 1);
+      box-shadow: 0 0 10px rgba(255,255,255,0.8);
+    }
+
+    /* Access Card Code Overlay */
+    #card-code-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 30px;
+      font-family: 'Courier New', monospace;
+    }
+
+    #card-code-overlay.visible {
+      display: flex;
+    }
+
+    #card-code-text {
+      font-size: 48px;
+      color: #00ff50;
+      text-shadow: 0 0 20px #00ff50;
+      font-weight: bold;
+      letter-spacing: 10px;
+    }
+
+    #card-code-proceed {
+      padding: 15px 50px;
+      background: none;
+      border: 3px solid #00ff50;
+      color: #00ff50;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.3s;
+    }
+
+    #card-code-proceed:hover {
+      background: #00ff50;
+      color: #000;
+    }
+
+    /* Safe on desk */
+    #safe-img {
+      position: absolute;
+      left: 700px;
+      top: 600px;
+      width: 120px;
+      height: 120px;
+      cursor: pointer;
+      z-index: 5;
+      display: none;
+      transition: transform 0.2s;
+    }
+
+    #safe-img:hover {
+      transform: scale(1.1);
+    }
+
+    /* Safe Code Overlay */
+    #safe-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 20px;
+      font-family: 'Courier New', monospace;
+    }
+
+    #safe-overlay.visible {
+      display: flex;
+    }
+
+    #safe-title {
+      font-size: 32px;
+      color: #ffaa00;
+      text-shadow: 0 0 20px #ffaa00;
+      font-weight: bold;
+    }
+
+    #safe-inputs {
+      display: flex;
+      gap: 15px;
+    }
+
+    .safe-input {
+      width: 60px;
+      height: 80px;
+      font-size: 48px;
+      text-align: center;
+      background: #000;
+      border: 3px solid #ffaa00;
+      color: #ffaa00;
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+    }
+
+    #safe-submit {
+      padding: 15px 40px;
+      background: none;
+      border: 3px solid #ffaa00;
+      color: #ffaa00;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.3s;
+    }
+
+    #safe-submit:hover {
+      background: #ffaa00;
+      color: #000;
+    }
+
+    #safe-message {
+      font-size: 20px;
+      color: #ff3333;
+      min-height: 30px;
+    }
+
+    #safe-close {
+      padding: 10px 30px;
+      background: none;
+      border: 2px solid #666;
+      color: #666;
+      font-size: 16px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    #safe-close:hover {
+      border-color: #fff;
+      color: #fff;
+    }
+
+    /* Parts Overlay */
+    #parts-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 30px;
+    }
+
+    #parts-overlay.visible {
+      display: flex;
+    }
+
+    #parts-img {
+      max-width: 500px;
+      max-height: 500px;
+      border: 3px solid #00ff50;
+    }
+
+    #parts-claim-btn {
+      padding: 20px 60px;
+      background: none;
+      border: 3px solid #00ff50;
+      color: #00ff50;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: 'Courier New', monospace;
+      transition: all 0.3s;
+    }
+
+    #parts-claim-btn:hover {
+      background: #00ff50;
+      color: #000;
+    }
+
+    /* Helicopter Repair Overlay */
+    #helicopter-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 30px;
+      font-family: 'Courier New', monospace;
+    }
+
+    #helicopter-overlay.visible {
+      display: flex;
+    }
+
+    #helicopter-title {
+      font-size: 32px;
+      color: #00ff50;
+      text-shadow: 0 0 20px #00ff50;
+      font-weight: bold;
+    }
+
+    #helicopter-repair-btn,
+    #helicopter-leave-btn {
+      padding: 20px 60px;
+      background: none;
+      border: 3px solid #00ff50;
+      color: #00ff50;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.3s;
+    }
+
+    #helicopter-repair-btn:hover,
+    #helicopter-leave-btn:hover {
+      background: #00ff50;
+      color: #000;
+    }
+
+    #helicopter-repair-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    #helicopter-progress-wrap {
+      width: 400px;
+      height: 40px;
+      background: #222;
+      border: 3px solid #00ff50;
+      border-radius: 5px;
+      overflow: hidden;
+      display: none;
+    }
+
+    #helicopter-progress-wrap.visible {
+      display: block;
+    }
+
+    #helicopter-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #00ff50, #00b432);
+      transition: width 0.1s linear;
+      box-shadow: 0 0 20px #00ff50;
+    }
+
+    #helicopter-leave-btn {
+      display: none;
+    }
+
+    #helicopter-leave-btn.visible {
+      display: block;
+    }
+
     #cam-canvas {
       width: 100%;
       height: 100%;
       display: block;
-      border: 2px solid rgba(0, 255, 80, 0.7);
-      box-shadow: 0 0 20px rgba(0, 255, 80, 0.12), inset 0 0 40px rgba(0, 0, 0, 0.4);
+      border: 4px solid #00ff50; /* Made thicker to see clearly */
+      box-shadow: 0 0 20px rgba(0, 255, 80, 0.5), inset 0 0 40px rgba(0, 0, 0, 0.4);
       transition: filter 0.1s;
+      background: #000; /* Add black background to see canvas bounds */
     }
 
     /* Camera static/lag effect */
@@ -496,11 +803,13 @@
       font-weight: bold;
       text-shadow: 0 0 8px #00ff50;
       pointer-events: none;
+      z-index: 15; /* Above flashlight overlay */
     }
 
     #zoom-btn,
     #honk-btn,
-    #decoy-btn {
+    #decoy-btn,
+    #flashlight-btn {
       pointer-events: auto;
     }
 
@@ -653,6 +962,36 @@
       cursor: not-allowed;
     }
 
+    /* Flashlight Button */
+    #flashlight-btn {
+      position: absolute;
+      bottom: 10px;
+      right: 350px;
+      background: none;
+      border: 2px solid #ffff00;
+      color: #ffff00;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: bold;
+      transition: all 0.2s;
+      opacity: 1;
+      z-index: 15;
+      display: none; /* Hidden - flashlight disabled */
+    }
+
+    #flashlight-btn:hover {
+      background: #ffff00;
+      color: #000;
+    }
+
+    #flashlight-btn.active {
+      background: #ffff00;
+      color: #000;
+      box-shadow: 0 0 15px #ffff00;
+    }
+
     /* HUD */
     #hud {
       position: absolute;
@@ -721,6 +1060,38 @@
       font-family: 'Courier New', monospace;
       text-shadow: 0 0 10px #00ff50;
       font-size: 16px;
+    }
+
+    /* Final Phase Timer */
+    #final-timer {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 5;
+      color: #ffaa00;
+      font-family: 'Courier New', monospace;
+      font-size: 48px;
+      font-weight: bold;
+      text-shadow: 0 0 20px #ffaa00, 0 0 40px #ff8800;
+      display: none;
+      pointer-events: none;
+    }
+
+    #final-timer.visible {
+      display: block;
+      animation: timer-pulse 1s infinite;
+    }
+
+    @keyframes timer-pulse {
+      0%, 100% {
+        transform: translate(-50%, -50%) scale(1);
+        text-shadow: 0 0 20px #ffaa00, 0 0 40px #ff8800;
+      }
+      50% {
+        transform: translate(-50%, -50%) scale(1.05);
+        text-shadow: 0 0 30px #ffaa00, 0 0 60px #ff8800, 0 0 80px #ff6600;
+      }
     }
 
     /* Ghost Timer */
@@ -836,6 +1207,19 @@
       color: #000;
       box-shadow: 0 0 10px #00ff50;
     }
+    
+    .cam-node.ghost-alert {
+      background: #ff0000 !important;
+      color: #ffffff !important;
+      box-shadow: 0 0 15px #ff0000 !important;
+      font-weight: bold;
+      animation: ghost-pulse 1s infinite;
+    }
+    
+    @keyframes ghost-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
 
     .cam-node .shortcut {
       position: absolute;
@@ -890,6 +1274,25 @@
       font-size: 48px;
       text-shadow: 0 0 20px #00ff50;
       z-index: 9;
+    }
+
+    #survived-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+    }
+
+    #survived-content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
 
     #survived span {
@@ -1526,6 +1929,95 @@
 
     #files-overlay.visible { display: flex; }
 
+    /* ── Send Files overlay ───────────────────────────────────────────────── */
+    #send-files-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 100;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 30px;
+      font-family: 'Courier New', monospace;
+    }
+
+    #send-files-overlay.visible { display: flex; }
+
+    #send-files-title {
+      font-size: 32px;
+      color: #00ff50;
+      text-shadow: 0 0 20px #00ff50;
+      letter-spacing: 3px;
+      font-weight: bold;
+    }
+
+    #send-files-btn {
+      padding: 20px 60px;
+      background: none;
+      border: 3px solid #00ff50;
+      color: #00ff50;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.3s;
+      letter-spacing: 2px;
+    }
+
+    #send-files-btn:hover {
+      background: #00ff50;
+      color: #000;
+      transform: scale(1.05);
+    }
+
+    /* ── Warning overlay ───────────────────────────────────────────────────── */
+    #warning-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: #000;
+      z-index: 150;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 40px;
+      font-family: 'Courier New', monospace;
+    }
+
+    #warning-overlay.visible { display: flex; }
+
+    #warning-text {
+      font-size: 24px;
+      color: #ff3333;
+      text-shadow: 0 0 20px #ff3333;
+      text-align: center;
+      max-width: 800px;
+      line-height: 1.6;
+      font-weight: bold;
+      padding: 0 40px;
+    }
+
+    #warning-proceed-btn {
+      padding: 20px 60px;
+      background: none;
+      border: 3px solid #ff3333;
+      color: #ff3333;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.3s;
+      letter-spacing: 2px;
+    }
+
+    #warning-proceed-btn:hover {
+      background: #ff3333;
+      color: #000;
+      transform: scale(1.05);
+    }
+
     #files-img {
       max-width: 420px;
       max-height: 420px;
@@ -1575,6 +2067,11 @@
       box-shadow: 0 0 6px rgba(0,255,80,0.3);
     }
 
+    #computer-power-btn.hidden-by-camera {
+      pointer-events: none;
+      opacity: 0;
+    }
+
     #computer-power-btn:hover {
       background: #00ff50;
       color: #000;
@@ -1597,6 +2094,11 @@
     }
 
     #computer-boot.visible { display: flex; }
+
+    #computer-boot.hidden-by-camera {
+      pointer-events: none;
+      opacity: 0;
+    }
 
     #computer-boot-bar-wrap {
       width: 100%;
@@ -1639,6 +2141,11 @@
       display: block;
     }
 
+    #computer-screen-zone.hidden-by-camera {
+      pointer-events: none;
+      opacity: 0;
+    }
+
     /* Terminal popup */
     #computer-terminal {
       position: absolute;
@@ -1658,6 +2165,11 @@
     }
 
     #computer-terminal.visible { display: flex; }
+
+    #computer-terminal.hidden-by-camera {
+      pointer-events: none;
+      opacity: 0;
+    }
 
     #terminal-header {
       font-size: 13px;
@@ -1797,6 +2309,7 @@
     <div id="cam-wrap">
       <canvas id="cam-canvas"></canvas>
       <div id="static-overlay"></div>
+      <div id="flashlight-overlay"></div>
       <div id="cam-ui">
         <div id="cam-label">CAM 1</div>
         <div id="rec-wrap">
@@ -1805,6 +2318,7 @@
         <div id="pan-bar">
           <div id="pan-ind"></div>
         </div>
+        <button id="flashlight-btn">🔦 FLASHLIGHT</button>
         <button id="decoy-btn">📯 DECOY (3)</button>
         <button id="honk-btn">🔊 HONK</button>
         <button id="zoom-btn">⊕ ZOOM</button>
@@ -1834,6 +2348,9 @@
 
     <!-- Ghost Timer -->
     <div id="ghost-timer" style="display: none;">20.000</div>
+
+    <!-- Final Phase Timer -->
+    <div id="final-timer">RESCUE: 40s</div>
 
     <div id="controls-hint">
       [1-9] Switch Cams | [10][11] Quick press | [←→↑↓] Pan | [S] Screenshot | [H] Honk    </div>
@@ -1901,6 +2418,56 @@
       <button id="files-collect-btn">COLLECT FILES</button>
     </div>
 
+    <!-- Send Files overlay -->
+    <div id="send-files-overlay">
+      <div id="send-files-title">ALL OBJECTIVES COMPLETE</div>
+      <button id="send-files-btn">SEND FILES</button>
+    </div>
+
+    <!-- Warning overlay -->
+    <div id="warning-overlay">
+      <div id="warning-text">Rescue arrives in 90 seconds.<br><br>Due to a breach in signals, all 3 entities know they have been caught...<br><br>They are furious.</div>
+      <button id="warning-proceed-btn">PROCEED</button>
+    </div>
+
+    <!-- Access Card Code Overlay -->
+    <div id="card-code-overlay">
+      <div id="card-code-text">000</div>
+      <button id="card-code-proceed">PROCEED</button>
+    </div>
+
+    <!-- Safe Overlay -->
+    <div id="safe-overlay">
+      <div id="safe-title">ENTER SAFE CODE</div>
+      <div id="safe-inputs">
+        <input type="number" class="safe-input" id="safe-digit-1" min="1" max="9" maxlength="1">
+        <input type="number" class="safe-input" id="safe-digit-2" min="1" max="9" maxlength="1">
+        <input type="number" class="safe-input" id="safe-digit-3" min="1" max="9" maxlength="1">
+      </div>
+      <button id="safe-submit">SUBMIT</button>
+      <div id="safe-message"></div>
+      <button id="safe-close">CLOSE</button>
+    </div>
+
+    <!-- Parts Overlay -->
+    <div id="parts-overlay">
+      <img id="parts-img" src="assets/photos/parts.png" alt="Parts">
+      <button id="parts-claim-btn">CLAIM</button>
+    </div>
+
+    <!-- Helicopter Repair Overlay -->
+    <div id="helicopter-overlay">
+      <div id="helicopter-title">BROKEN HELICOPTER</div>
+      <button id="helicopter-repair-btn">REPAIR</button>
+      <div id="helicopter-progress-wrap">
+        <div id="helicopter-progress-fill"></div>
+      </div>
+      <button id="helicopter-leave-btn">LEAVE</button>
+    </div>
+
+    <!-- Safe on desk (appears after entering access card code) -->
+    <img id="safe-img" src="assets/photos/safe.png" alt="Safe">
+
     <!-- Panel with SVG map -->
     <div id="panel">
       <div id="panel-title">── SECURITY CAMERAS ──</div>
@@ -1908,9 +2475,12 @@
     </div>
 
     <div id="survived">
-      <span>YOU WON</span>
-      <p style="font-size:24px;margin-top:20px;">Mission complete — files secured.</p>
-      <p id="final-screenshots" style="font-size:18px;margin-top:10px;opacity:0.7;"></p>
+      <img id="survived-bg" src="assets/photos/rescued.png" alt="Rescued">
+      <div id="survived-content">
+        <span>YOU WON</span>
+        <p style="font-size:24px;margin-top:20px;">Mission complete — files secured.</p>
+        <p id="final-screenshots" style="font-size:18px;margin-top:10px;opacity:0.7;"></p>
+      </div>
     </div>
   </div>
 
@@ -1989,18 +2559,17 @@
     // ═══════════════════════════════════════════════════════════════════════════
     const STORYLINE = [
       "Welcome to Big Stein Island. You've been hired as a night security operator to monitor the facility through CCTV cameras.",
-      "Your mission: capture 3 clear photographs — one of Big Stein, one of Trump (while roaming, not in a vent), and one of the Ghost — and survive until 5 AM. Use the S key to take screenshots when you spot them on the cameras.",
+      "Your mission: capture 3 clear photographs — one of Big Stein, one of Trump (while roaming, not in a vent), and one of Steven Hawking (ghost). Use the S key to take screenshots when you spot them on the cameras.",
       "Big Stein roams the facility freely. Switch between cameras using number keys [1-9] or click the camera map. Use ZOOM and arrow keys [←→↑↓] to pan around and spot him in dark corners.",
       "WARNING: Taking a screenshot triggers a camera flash. Big Stein will notice and become hostile, moving toward your office. The more you provoke him, the faster he moves — watch the Rage Meter on your HUD.",
-      "You have limited defensive tools: HONK (H key) to lure him away from nearby cameras (85% success rate), and 📯 DECOY to reset his position completely (3 uses only). Use them wisely.",
-      "Big Stein's movements can overload the electrical grid, causing camera outages. If cameras go offline, use the CONTROL PANEL on the left. Click RESET ALL CAMERAS and wait 4 seconds for the system to reboot.",
-      "The CONTROL PANEL also has a CLOSE VENTS button. Closing vents can help, but your oxygen will drain at 1% every 0.5 seconds. If oxygen reaches 0%, you die. Open the vents before it's too late!",
-      "Something else lurks in the facility — a ghost. When a countdown timer appears on your screen, you have exactly 20 SECONDS to search through all cameras, find the ghost, and CLICK on it before time runs out. Failure means instant death.",
+      "You have limited defensive tools: HONK (H key) to lure him away from nearby cameras, and 📯 DECOY to reset his position completely (3 uses only). Use them wisely.",
+      "Big Stein's movements can overload the electrical grid, causing camera outages. If cameras go offline, use the CONTROL PANEL on the left. Click RESET ALL CAMERAS for the system to reboot.",
+      "The CONTROL PANEL also has a CLOSE VENTS button. Closing vents can help, but your oxygen will drain. If oxygen reaches 0%, you die.",
+      "Something else lurks in the facility — a ghost. When a countdown timer appears on your screen, you have to search through all cameras, find the ghost, and CLICK on it before time runs out.",
       "There is a second threat: TRUMP. He will appear on a random camera and move around for a while before crawling into one of two vents — one between CAM 10 and your office, one between CAM 3 and your office.",
       "Once Trump enters a vent, you dont have alot of time before he starts crawling. When you hear the crawl sound, open the CONTROL PANEL and hit CLOSE VENTS to stop him.",
       "Lure Trump out of a vent using HONK — but only if you have spotted him in the vent first. Honk on the nearest camera to the vent that he's in to get him out.",
       "If Trump reaches your room, hit [ESC] to exit cameras and hide [E].",
-      "Your real goal is survival. Stall Big Stein using every tool available. If you make it to 5 AM, you win.",
       "THE FILES: Somewhere in the facility, a set of classified files is hidden. Your job is to find them. Pay close attention while scanning the cameras — small numbered cues will appear on the feeds after Big Stein turns hostile. Click on them. Write them down to not forget in your NOTES (Control Panel → Notes)",
       "Good luck, operator."
     ];
@@ -2009,7 +2578,7 @@
     // CONFIG
     // ═══════════════════════════════════════════════════════════════════════════
     const REQUIRED_SCREENSHOTS = 3;
-    const BIGSTEIN_SPAWN_DELAY = 30; // seconds before Big Stein spawns
+    const BIGSTEIN_SPAWN_DELAY = 30000; // seconds before Big Stein spawns
     const PASSIVE_MOVE_DELAY = 20000; // 20 seconds before passive move
     const AGGRESSIVE_STARE_TIME = 3000; // 3 seconds staring after screenshot
     const STATIC_DURATION = 3000; // 3 seconds of static
@@ -2166,6 +2735,33 @@
     let gameOver = false;
     let screenshots = 0;
     // Track which entities have been photographed
+    
+    // Final phase variables
+    let finalPhaseActive = false;
+    let finalPhaseStartTime = null;
+    const FINAL_PHASE_DURATION = 90000; // 90 seconds (1 minute 30 seconds)
+    
+    // Flashlight variables
+    let flashlightOn = false; // Flashlight OFF by default
+    let flashlightX = 50; // Percentage (0-100)
+    let flashlightY = 50; // Percentage (0-100)
+    const FLASHLIGHT_RADIUS = 250; // Radius in pixels (increased for better visibility)
+    const FLASHLIGHT_MOVE_SPEED = 2; // Percentage per frame
+    const FLASHLIGHT_ENABLED = false; // Master switch - flashlight feature disabled
+    
+    // Alternate ending variables
+    let secretCodeEntered = false; // Whether 9-1-1 was entered
+    let showAmbulanceHint = false; // Show hint after computing numbers
+    let accessCardFound = false; // Whether player found the access card
+    let accessCardCode = []; // 3 random numbers from 1-9
+    let accessCardCamera = -1; // Which camera has the card
+    let accessCardX = 0; // Card position X%
+    let accessCardY = 0; // Card position Y%
+    let safeCodeEntered = false; // Whether correct safe code was entered
+    let partsCollected = false; // Whether parts were collected
+    let helicopterRepaired = false; // Whether helicopter was repaired
+    let helicopterRepairing = false; // Whether repair is in progress
+    let helicopterImg = null; // Helicopter image for alternate ending
     let capturedBigStein = false;
     let capturedTrump = false;
     let capturedGhost = false;
@@ -2309,6 +2905,7 @@
     let fileCamera = -1;       // which cam (1,3,5,6,7) the file is hidden on this game
     let lastTripletKey = '';   // "A,B,C" of last used triplet — ensures variety across games
     let filesFound = false;    // whether the player has found the files this game
+    let numbersComputed = false; // whether the player has successfully computed the correct formula
 
     // File hotspot positions per camera (image-space %, x=left%, y=top%)
     // Mapped from the red circles in the camera images
@@ -2360,6 +2957,8 @@
     const honkBtn = document.getElementById('honk-btn');
     const decoyBtn = document.getElementById('decoy-btn');
     const zoomBtn = document.getElementById('zoom-btn');
+    const flashlightBtn = document.getElementById('flashlight-btn');
+    const flashlightOverlay = document.getElementById('flashlight-overlay');
     const mapSvg = document.getElementById('map-svg');
     const survDiv = document.getElementById('survived');
     const screenshotsHud = document.getElementById('screenshots-hud');
@@ -2515,6 +3114,12 @@
         ghostImg.onerror = progress;
         ghostImg.src = 'assets/photos/ghost.png';
 
+        // Load helicopter image for alternate ending
+        helicopterImg = new Image();
+        helicopterImg.onload = progress;
+        helicopterImg.onerror = progress;
+        helicopterImg.src = 'assets/photos/helicopter.png';
+
         const otherAssets = ['assets/photos/lobby.png', 'assets/photos/bigstein.jpeg', 'assets/photos/storylinebackround.png', 'assets/photos/room.png'];
         otherAssets.forEach(src => {
           const img = new Image();
@@ -2637,7 +3242,40 @@
       capturedGhost = false;
       fileCamera = -1;
       filesFound = false;
+      numbersComputed = false; // Reset computation flag
       document.getElementById('files-overlay').classList.remove('visible');
+      document.getElementById('send-files-overlay').classList.remove('visible');
+      document.getElementById('warning-overlay').classList.remove('visible');
+      
+      // Reset final phase
+      finalPhaseActive = false;
+      finalPhaseStartTime = null;
+      document.getElementById('final-timer').classList.remove('visible');
+      
+      // Reset flashlight
+      flashlightOn = false; // Start with flashlight OFF
+      flashlightX = 50;
+      flashlightY = 50;
+      if (flashlightBtn) {
+        flashlightBtn.classList.remove('active');
+        flashlightBtn.textContent = '🔦 FLASHLIGHT';
+      }
+      if (flashlightOverlay) {
+        flashlightOverlay.classList.remove('active');
+      }
+      
+      // Reset alternate ending
+      secretCodeEntered = false;
+      showAmbulanceHint = false;
+      accessCardFound = false;
+      accessCardCode = [];
+      accessCardCamera = -1;
+      safeCodeEntered = false;
+      partsCollected = false;
+      document.getElementById('safe-img').style.display = 'none';
+      document.getElementById('card-code-overlay').classList.remove('visible');
+      document.getElementById('safe-overlay').classList.remove('visible');
+      document.getElementById('parts-overlay').classList.remove('visible');
 
       // Reset Big Stein
       bigStein.state = BIGSTEIN_STATE.IDLE;
@@ -2656,7 +3294,7 @@
       camPower.fill('ON');
       outageActive = false;
       if (decoyBtn) {
-        decoyBtn.textContent = '📯 DECOY (3)';
+        decoyBtn.textContent = '📯 DECOY (10)';
         decoyBtn.disabled = false;
       }
       decoyUses = 3;
@@ -2963,7 +3601,12 @@
         
         // Apply rage reduction — each rage second shaves 1s off movement, min 6s
         const rageReduction = bigStein.rageAccumulation * 1000;
-        const currentSpeed = Math.max(6000, baseSpeed - rageReduction);
+        let currentSpeed = Math.max(6000, baseSpeed - rageReduction);
+
+        // FINAL PHASE: Force 6 second movement
+        if (finalPhaseActive) {
+          currentSpeed = 6000;
+        }
 
         // Slow down if ANY camera is broken
         let isOutage = false;
@@ -2974,7 +3617,7 @@
           }
         }
         let finalSpeed = currentSpeed;
-        if (isOutage) {
+        if (isOutage && !finalPhaseActive) { // Don't slow down during final phase
           finalSpeed += 1500;
         }
 
@@ -3192,7 +3835,7 @@
         // Spawn first ghost immediately after the delay
         spawnGhost();
 
-        // Then continue spawning every 25 seconds
+        // Then continue spawning every 25 seconds (or 15 seconds in final phase)
         ghostInterval = setInterval(() => {
           if (gameState !== 'game' || ghostActive) return;
 
@@ -3216,7 +3859,7 @@
           }
 
           spawnGhost();
-        }, 35000); // Check every 35 seconds
+        }, finalPhaseActive ? 15000 : 35000); // 15s in final phase, 35s normally
       }, 45000); // 45 seconds delay (30s Big Stein + 15s)
     }
 
@@ -3255,15 +3898,27 @@
       ghostSpawnTime = Date.now();
 
       console.log(`Ghost spawned on CAM ${ghostCamera + 1}!`);
+      
+      // Add red indicator to camera button if flashlight is on (lights off mode)
+      if (flashlightOn) {
+        const camButton = document.querySelector(`.cam-node[data-cam="${ghostCamera}"]`);
+        if (camButton) {
+          camButton.classList.add('ghost-alert');
+          console.log(`Red alert added to CAM ${ghostCamera + 1} button (lights off mode)`);
+        }
+      }
 
       // Show timer
       const ghostTimer = document.getElementById('ghost-timer');
       ghostTimer.style.display = 'block';
 
+      // Countdown duration: 15 seconds in final phase, 20 seconds normally
+      const countdownDuration = finalPhaseActive ? 15000 : 20000;
+
       // Start countdown
       ghostCountdownInterval = setInterval(() => {
         const elapsed = Date.now() - ghostSpawnTime;
-        const remaining = Math.max(0, 20000 - elapsed);
+        const remaining = Math.max(0, countdownDuration - elapsed);
         const seconds = Math.floor(remaining / 1000);
         const milliseconds = remaining % 1000;
         ghostTimer.textContent = `${seconds}.${milliseconds.toString().padStart(3, '0')}`;
@@ -3275,12 +3930,12 @@
         }
       }, 10);
 
-      // Auto-fail after 20 seconds
+      // Auto-fail after countdown duration
       ghostTimeout = setTimeout(() => {
         if (ghostActive) {
           ghostFailure();
         }
-      }, 20000);
+      }, countdownDuration);
     }
 
     function clickGhost() {
@@ -3288,6 +3943,13 @@
       if (activeCam !== ghostCamera) return;
 
       console.log("Ghost clicked!");
+
+      // Remove red indicator from camera button
+      const camButton = document.querySelector(`.cam-node[data-cam="${ghostCamera}"]`);
+      if (camButton) {
+        camButton.classList.remove('ghost-alert');
+        console.log(`Red alert removed from CAM ${ghostCamera + 1} button`);
+      }
 
       // Clear timeout and countdown interval
       if (ghostTimeout) {
@@ -3329,6 +3991,13 @@
       }
 
       console.log("Ghost not clicked in time - jumpscare!");
+
+      // Remove red indicator from camera button
+      const camButton = document.querySelector(`.cam-node[data-cam="${ghostCamera}"]`);
+      if (camButton) {
+        camButton.classList.remove('ghost-alert');
+        console.log(`Red alert removed from CAM ${ghostCamera + 1} button (ghost failure)`);
+      }
 
       // Hide timer
       const ghostTimer = document.getElementById('ghost-timer');
@@ -3469,7 +4138,7 @@
         cueCollected.push(false);
       }
 
-      console.log('Cue numbers placed:', cueNumbers.map((c, i) => `${['A','B','C'][i]}=${c.value} on CAM ${c.camera + 1}`).join(', '));
+      console.log('Cue numbers placed:', cueNumbers.map((c, i) => `${['A','B','C'][i]}=${c.value} on CAM ${c.camera + 1} at (${c.x.toFixed(1)}%, ${c.y.toFixed(1)}%)`).join(', '));
     }
 
     function startCueNumberSpawns() {
@@ -3520,15 +4189,24 @@
 
         if (drawX < -40 || drawX > canvasW + 40 || drawY < -20 || drawY > canvasH + 20) continue;
 
-        const fontSize = Math.round(canvasH * 0.028);
+        const fontSize = Math.round(canvasH * 0.04); // Increased from 0.028 to 0.04 for better visibility
         const label = ['A', 'B', 'C'][i]; // Label each cue as A, B, or C
         ctx.save();
         ctx.font = `bold ${fontSize}px Courier New`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.shadowColor = 'rgba(0,0,0,0.8)';
-        ctx.shadowBlur = 4;
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+        
+        // Draw background box for better visibility
+        const textMetrics = ctx.measureText(`${label}=${cue.value}`);
+        const textWidth = textMetrics.width;
+        const padding = 8;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(drawX - textWidth/2 - padding, drawY - fontSize/2 - padding, textWidth + padding*2, fontSize + padding*2);
+        
+        // Draw text with glow effect
+        ctx.shadowColor = 'rgba(255, 255, 0, 0.9)';
+        ctx.shadowBlur = 8;
+        ctx.fillStyle = '#ffff00'; // Bright yellow for high visibility
         ctx.fillText(`${label}=${cue.value}`, drawX, drawY);
         ctx.restore();
       }
@@ -3580,6 +4258,12 @@
       if (!camOpen) return false;
       if (filesFound) return false;
       if (!fileCamera || fileCamera === -1) return false;
+      
+      // Can't click files until numbers have been computed
+      if (!numbersComputed) {
+        showCaptureFlash('COMPUTE THE NUMBERS FIRST!');
+        return false;
+      }
 
       // File is on this camera? (fileCamera is 1-indexed, activeCam is 0-indexed)
       if (activeCam !== fileCamera - 1) return false;
@@ -3698,8 +4382,14 @@
       if (trump.inVent && !trump.inRoom) {
         const timeInVent = now - trump.ventEntryTime;
         
-        // After 25s in vent (20s in bluff mode), play crawl sound
-        const ventWait = trump.isBluffMode ? 20000 : TRUMP_VENT_WAIT_TIME;
+        // Wait time before crawling: 10s in final phase, 20s in bluff mode, 25s normally
+        let ventWait = TRUMP_VENT_WAIT_TIME;
+        if (finalPhaseActive) {
+          ventWait = 10000; // 10 seconds in final phase
+        } else if (trump.isBluffMode) {
+          ventWait = 20000;
+        }
+        
         if (timeInVent >= ventWait && !trump.crawlPlayed) {
           trump.crawlPlayed = true;
           trump.crawlStartTime = now; // Track when crawl started
@@ -3746,8 +4436,11 @@
       
       const timeSinceLastMove = now - trump.lastMoveTime;
       
-      // Move every 10 seconds
-      if (timeSinceLastMove >= TRUMP_MOVE_INTERVAL) {
+      // Move interval: 15 seconds in final phase, 10 seconds normally
+      const moveInterval = finalPhaseActive ? 15000 : TRUMP_MOVE_INTERVAL;
+      
+      // Move every interval
+      if (timeSinceLastMove >= moveInterval) {
         trump.moveCount++;
 
         // Bluff mode: play fake crawl sound at move 2 (only once)
@@ -3760,8 +4453,9 @@
           console.log('Trump BLUFF crawl — fake out! Full 9.3s audio plays.');
         }
 
-        // Vent threshold: 5 moves in bluff mode, 4 normally
-        const ventThreshold = trump.isBluffMode ? 5 : TRUMP_MOVES_BEFORE_VENT;
+        // Vent threshold: In final phase, enter vent immediately (every 15s)
+        // In bluff mode: 5 moves, normally: 4 moves
+        const ventThreshold = finalPhaseActive ? 1 : (trump.isBluffMode ? 5 : TRUMP_MOVES_BEFORE_VENT);
 
         // After threshold moves, go to a vent (only if vents are open)
         if (trump.moveCount >= ventThreshold) {
@@ -3783,6 +4477,7 @@
           trump.ventEntryTime = now;
           trump.lastMoveTime = now;
           trump.seenInVent = false; // Reset — player must spot him fresh
+          trump.moveCount = 0; // Reset move count for next cycle
           console.log(`Trump entered VENT ${trump.ventNumber} and will stay there`);
           return;
         }
@@ -4276,6 +4971,30 @@
       if (zoomed) panY = 50;
     }
 
+    function toggleFlashlight() {
+      playButtonSfx();
+      flashlightOn = !flashlightOn;
+      if (flashlightOn) {
+        flashlightBtn.classList.add('active');
+        flashlightBtn.textContent = '🔦 ON';
+        flashlightOverlay.classList.add('active');
+        // Reset flashlight to center when turned on
+        flashlightX = 50;
+        flashlightY = 50;
+        updateFlashlightPosition();
+      } else {
+        flashlightBtn.classList.remove('active');
+        flashlightBtn.textContent = '🔦 FLASHLIGHT';
+        flashlightOverlay.classList.remove('active');
+      }
+    }
+
+    function updateFlashlightPosition() {
+      if (flashlightOverlay && flashlightOn) {
+        flashlightOverlay.style.background = `radial-gradient(circle ${FLASHLIGHT_RADIUS}px at ${flashlightX}% ${flashlightY}%, transparent 0%, rgba(0,0,0,0.98) 100%)`;
+      }
+    }
+
     // ═══════════════════════════════════════════════════════════════════════════
     // HONK
     // ═══════════════════════════════════════════════════════════════════════════
@@ -4542,7 +5261,6 @@
       if (!rageFill) return;
       
       // Always show rage accumulation, even before Big Stein spawns
-      // Rage bar shows how many seconds have been taken off movement (max 6 seconds)
       const maxRage = 6; // Maximum 6 seconds can be taken off (floor is 6s movement)
       const percent = Math.min(100, (bigStein.rageAccumulation / maxRage) * 100);
       rageFill.style.width = `${percent}%`;
@@ -4610,7 +5328,7 @@
           setTimeout(() => {
             honkCooldown = false;
             honkBtn.classList.remove('cooldown');
-          }, HONK_COOLDOWN_MS);
+          }, finalPhaseActive ? 10000 : HONK_COOLDOWN_MS);
           return;
         }
       }
@@ -4636,7 +5354,7 @@
       setTimeout(() => {
         honkCooldown = false;
         honkBtn.classList.remove('cooldown');
-      }, HONK_COOLDOWN_MS);
+      }, finalPhaseActive ? 10000 : HONK_COOLDOWN_MS);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -5065,34 +5783,9 @@
       if (gameOver || survived) return;
       if (!capturedBigStein || !capturedTrump || !capturedGhost || !filesFound) return;
 
-      survived = true;
-      console.log('WIN — all 3 photos captured and files collected!');
-
-      // Stop all audio
-      if (alarmAudio) { alarmAudio.pause(); alarmAudio.currentTime = 0; }
-      if (backgroundAudio) { backgroundAudio.pause(); backgroundAudio.currentTime = 0; }
-
-      // Clear ghost
-      if (ghostInterval) { clearInterval(ghostInterval); ghostInterval = null; }
-      if (ghostTimeout) { clearTimeout(ghostTimeout); ghostTimeout = null; }
-      if (ghostCountdownInterval) { clearInterval(ghostCountdownInterval); ghostCountdownInterval = null; }
-      ghostActive = false;
-      document.getElementById('ghost-timer').style.display = 'none';
-
-      // Clear cue timers
-      cueSpawnTimers.forEach(t => clearTimeout(t));
-      cueSpawnTimers = [];
-
-      // Hide game UI
-      camWrap.classList.remove('visible');
-      panel.classList.remove('visible');
-      document.getElementById('files-overlay').classList.remove('visible');
-
-      // Play church bell
-      playChurchBell();
-
-      // Show win screen
-      survDiv.style.display = 'flex';
+      // Show "Send Files" overlay instead of winning immediately
+      console.log('All objectives complete — showing Send Files overlay');
+      document.getElementById('send-files-overlay').classList.add('visible');
     }
 
     function takeScreenshot() {
@@ -5223,6 +5916,16 @@
     function updatePan() {
       if (!camOpen || gameState !== 'game') return;
       
+      // If flashlight is on, move flashlight instead of panning
+      if (flashlightOn) {
+        if (keysPressed.ArrowLeft) flashlightX = Math.max(0, flashlightX - FLASHLIGHT_MOVE_SPEED);
+        if (keysPressed.ArrowRight) flashlightX = Math.min(100, flashlightX + FLASHLIGHT_MOVE_SPEED);
+        if (keysPressed.ArrowUp) flashlightY = Math.max(0, flashlightY - FLASHLIGHT_MOVE_SPEED);
+        if (keysPressed.ArrowDown) flashlightY = Math.min(100, flashlightY + FLASHLIGHT_MOVE_SPEED);
+        updateFlashlightPosition();
+        return; // Don't pan camera when flashlight is on
+      }
+      
       // Don't allow panning on vent cameras
       if (CAMS[activeCam] && CAMS[activeCam].noPan) return;
 
@@ -5236,6 +5939,9 @@
     }
 
     function drawCamera() {
+      // Only draw if cameras are actually open
+      if (!camOpen) return;
+      
       // Sync canvas internal resolution with its CSS layout size
       resizeCanvas();
 
@@ -5258,6 +5964,9 @@
         } else if (trump.inVent && activeCam === 12 && trump.ventNumber === 2 && trumpVent2Img) {
           img = trumpVent2Img; // Use trumpvent2.png for VENT 2
           trump.seenInVent = true; // Player is watching Trump's vent
+        } else if (activeCam === 9 && partsCollected && filesFound && capturedBigStein && capturedTrump && capturedGhost && helicopterImg) {
+          // Show helicopter on CAM 10 when all conditions are met (alternate ending)
+          img = helicopterImg;
         } else {
           img = imgs[activeCam]; // Use normal camera image
         }
@@ -5303,10 +6012,13 @@
           const offsetY = -(effectivePanY / 100) * maxScrollY;
 
           ctx.drawImage(img, 0, 0, imgW, imgH, offsetX, offsetY, displayW, displayH);
+          
+          // Draw entities on top of the camera image
           drawBigStein();
           drawTrump();
           drawGhost();
           drawCueNumbers();
+          drawAccessCard(); // Draw access card if active
         } else {
           ctx.fillStyle = '#ffdd00';
           ctx.font = '24px Courier New';
@@ -5425,6 +6137,7 @@
     honkBtn.addEventListener('mousedown', doHonk);
     decoyBtn.addEventListener('mousedown', doDecoy);
     zoomBtn.addEventListener('mousedown', toggleZoom);
+    flashlightBtn.addEventListener('mousedown', toggleFlashlight);
     toggleBtn.addEventListener('mousedown', togglePanel);
     retryBtn.addEventListener('mousedown', retryGame);
 
@@ -5449,6 +6162,433 @@
       console.log('Files collected!');
       checkWinCondition();
     });
+
+    // Send Files button
+    document.getElementById('send-files-btn').addEventListener('mousedown', () => {
+      playButtonSfx();
+      document.getElementById('send-files-overlay').classList.remove('visible');
+      
+      // Check if player chose alternate path (secret code entered)
+      if (secretCodeEntered) {
+        // Alternate path: Show helicopter repair message
+        const warningText = document.getElementById('warning-text');
+        warningText.innerHTML = '*click*<br><br>Repair the helicopter on CAM 10 and leave.';
+        document.getElementById('warning-overlay').classList.add('visible');
+        console.log('Send Files clicked — showing alternate path message');
+      } else {
+        // Normal path: Show breach warning
+        const warningText = document.getElementById('warning-text');
+        warningText.innerHTML = 'Rescue arrives in 90 seconds.<br><br>Due to a breach in signals, all 3 entities know they have been caught...<br><br>They are furious.';
+        document.getElementById('warning-overlay').classList.add('visible');
+        console.log('Send Files clicked — showing normal warning');
+      }
+    });
+
+    // Warning Proceed button
+    document.getElementById('warning-proceed-btn').addEventListener('mousedown', () => {
+      playButtonSfx();
+      document.getElementById('warning-overlay').classList.remove('visible');
+      
+      // Check if player chose alternate path
+      if (secretCodeEntered) {
+        // Alternate path: Just close overlay, helicopter should already be visible on CAM 10
+        console.log('Alternate path: Player can now repair helicopter on CAM 10');
+      } else {
+        // Normal path: Start final phase
+        startFinalPhase();
+      }
+    });
+    
+    // Card Code Proceed button
+    document.getElementById('card-code-proceed').addEventListener('mousedown', () => {
+      playButtonSfx();
+      document.getElementById('card-code-overlay').classList.remove('visible');
+      gameOver = false; // Unpause game
+      
+      // Show safe on desk
+      const safeImg = document.getElementById('safe-img');
+      safeImg.style.display = 'block';
+      showCaptureFlash('SAFE APPEARED ON DESK');
+    });
+    
+    // Safe click
+    document.getElementById('safe-img').addEventListener('click', () => {
+      playButtonSfx();
+      document.getElementById('safe-overlay').classList.add('visible');
+      document.getElementById('safe-digit-1').focus();
+    });
+    
+    // Safe submit
+    document.getElementById('safe-submit').addEventListener('click', () => {
+      playButtonSfx();
+      const d1 = parseInt(document.getElementById('safe-digit-1').value);
+      const d2 = parseInt(document.getElementById('safe-digit-2').value);
+      const d3 = parseInt(document.getElementById('safe-digit-3').value);
+      const message = document.getElementById('safe-message');
+      
+      if (isNaN(d1) || isNaN(d2) || isNaN(d3)) {
+        message.textContent = 'ENTER ALL DIGITS';
+        message.style.color = '#ff3333';
+        return;
+      }
+      
+      // Check if code matches
+      if (d1 === accessCardCode[0] && d2 === accessCardCode[1] && d3 === accessCardCode[2]) {
+        message.textContent = 'CORRECT CODE!';
+        message.style.color = '#00ff50';
+        setTimeout(() => {
+          document.getElementById('safe-overlay').classList.remove('visible');
+          document.getElementById('parts-overlay').classList.add('visible');
+        }, 1000);
+      } else {
+        message.textContent = 'WRONG CODE';
+        message.style.color = '#ff3333';
+      }
+    });
+    
+    // Safe close
+    document.getElementById('safe-close').addEventListener('click', () => {
+      playButtonSfx();
+      document.getElementById('safe-overlay').classList.remove('visible');
+      document.getElementById('safe-message').textContent = '';
+    });
+    
+    // Parts claim
+    document.getElementById('parts-claim-btn').addEventListener('click', () => {
+      playButtonSfx();
+      partsCollected = true;
+      
+      // Keep lights off - player still needs to find files and screenshots
+      // Don't turn off flashlight yet
+      
+      document.getElementById('parts-overlay').classList.remove('visible');
+      showCaptureFlash('PARTS COLLECTED - LIGHTS TURNING ON');
+      
+      // Turn lights back on after 2 seconds
+      setTimeout(() => {
+        flashlightOn = false;
+        if (flashlightOverlay) {
+          flashlightOverlay.classList.remove('active');
+        }
+        showCaptureFlash('NOW FIND THE FILES AND SCREENSHOTS!');
+      }, 2000);
+      
+      console.log('Parts collected. Player must now collect files and screenshots.');
+    });
+    
+    // Helicopter repair button
+    document.getElementById('helicopter-repair-btn').addEventListener('click', () => {
+      playButtonSfx();
+      helicopterRepairing = true;
+      
+      const repairBtn = document.getElementById('helicopter-repair-btn');
+      const progressWrap = document.getElementById('helicopter-progress-wrap');
+      const progressFill = document.getElementById('helicopter-progress-fill');
+      const leaveBtn = document.getElementById('helicopter-leave-btn');
+      
+      repairBtn.disabled = true;
+      repairBtn.style.display = 'none';
+      progressWrap.classList.add('visible');
+      
+      // Animate progress bar over 4 seconds
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 2.5; // 100% / 40 steps = 2.5% per 100ms
+        progressFill.style.width = progress + '%';
+        
+        if (progress >= 100) {
+          clearInterval(interval);
+          helicopterRepaired = true;
+          helicopterRepairing = false;
+          
+          // Show leave button
+          setTimeout(() => {
+            progressWrap.classList.remove('visible');
+            leaveBtn.classList.add('visible');
+            document.getElementById('helicopter-title').textContent = 'HELICOPTER REPAIRED!';
+          }, 500);
+        }
+      }, 100); // Update every 100ms for 4 seconds total
+    });
+    
+    // Helicopter leave button
+    document.getElementById('helicopter-leave-btn').addEventListener('click', () => {
+      playButtonSfx();
+      document.getElementById('helicopter-overlay').classList.remove('visible');
+      
+      // Win the game with alternate ending
+      setTimeout(() => {
+        winGame();
+      }, 1000);
+    });
+
+    function startFinalPhase() {
+      console.log('FINAL PHASE STARTED — 90 seconds until rescue!');
+      finalPhaseActive = true;
+      finalPhaseStartTime = Date.now();
+
+      // Show final timer
+      const finalTimer = document.getElementById('final-timer');
+      finalTimer.classList.add('visible');
+
+      // Update timer every 100ms
+      const timerInterval = setInterval(() => {
+        if (!finalPhaseActive || gameOver || survived) {
+          clearInterval(timerInterval);
+          finalTimer.classList.remove('visible');
+          return;
+        }
+        const elapsed = Date.now() - finalPhaseStartTime;
+        const remaining = Math.max(0, FINAL_PHASE_DURATION - elapsed);
+        const seconds = (remaining / 1000).toFixed(1);
+        finalTimer.textContent = `RESCUE: ${seconds}s`;
+      }, 100);
+
+      // Add 2 decoys only if player has 1 or 0 decoys left
+      if (decoyUses <= 1) {
+        decoyUses += 2;
+        console.log(`Decoys replenished: ${decoyUses} uses available (was low on decoys)`);
+        
+        // Update decoy button display
+        const decoyBtn = document.getElementById('decoy-btn');
+        if (decoyBtn) {
+          decoyBtn.textContent = `📯 DECOY (${decoyUses})`;
+          decoyBtn.disabled = false;
+        }
+      } else {
+        console.log(`Decoys not replenished: ${decoyUses} uses available (had enough decoys)`);
+      }
+
+      // Restart ghost interval with faster timing
+      if (ghostInterval) {
+        clearInterval(ghostInterval);
+        ghostInterval = null;
+      }
+      ghostInterval = setInterval(() => {
+        if (gameState !== 'game' || ghostActive) return;
+        if (elecOverlay.classList.contains('visible')) return;
+        const brokenCameras = camPower.filter(p => p !== 'ON');
+        if (brokenCameras.length > 0) return;
+        spawnGhost();
+      }, 15000); // Every 15 seconds in final phase
+
+      // Reduce honk cooldown to 10 seconds (handled in honk logic)
+      
+      // Start 40-second countdown
+      setTimeout(() => {
+        if (gameState === 'game' && !gameOver) {
+          winGame();
+        }
+      }, FINAL_PHASE_DURATION);
+    }
+
+    function winGame() {
+      survived = true;
+      console.log('WIN — survived the final phase!');
+
+      // Stop all audio
+      if (alarmAudio) { alarmAudio.pause(); alarmAudio.currentTime = 0; }
+      if (backgroundAudio) { backgroundAudio.pause(); backgroundAudio.currentTime = 0; }
+
+      // Clear ghost
+      if (ghostInterval) { clearInterval(ghostInterval); ghostInterval = null; }
+      if (ghostTimeout) { clearTimeout(ghostTimeout); ghostTimeout = null; }
+      if (ghostCountdownInterval) { clearInterval(ghostCountdownInterval); ghostCountdownInterval = null; }
+      ghostActive = false;
+      document.getElementById('ghost-timer').style.display = 'none';
+
+      // Clear cue timers
+      cueSpawnTimers.forEach(t => clearTimeout(t));
+      cueSpawnTimers = [];
+
+      // Hide game UI
+      camWrap.classList.remove('visible');
+      panel.classList.remove('visible');
+      document.getElementById('files-overlay').classList.remove('visible');
+
+      // Play church bell
+      playChurchBell();
+
+      // Show win screen
+      survDiv.style.display = 'flex';
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // ALTERNATE ENDING - LIGHTS OFF / ACCESS CARD / SAFE
+    // ═══════════════════════════════════════════════════════════════════════════
+    
+    function triggerLightsOff() {
+      console.log('Lights off - find the access card!');
+      
+      // Turn on flashlight overlay
+      flashlightOn = true;
+      if (flashlightOverlay) {
+        flashlightOverlay.classList.add('active');
+        updateFlashlightPosition();
+      }
+      
+      // Show message
+      showCaptureFlash('FIND THE ACCESS CARD');
+      
+      // Spawn access card on random camera
+      spawnAccessCard();
+    }
+    
+    function spawnAccessCard() {
+      // Pick random camera (0-10, not vents)
+      accessCardCamera = Math.floor(Math.random() * 11);
+      
+      // Random position (avoid edges)
+      accessCardX = 20 + Math.random() * 60;
+      accessCardY = 20 + Math.random() * 60;
+      
+      // Generate 3 random numbers from 1-9
+      accessCardCode = [
+        Math.floor(Math.random() * 9) + 1,
+        Math.floor(Math.random() * 9) + 1,
+        Math.floor(Math.random() * 9) + 1
+      ];
+      
+      console.log(`Access card spawned on CAM ${accessCardCamera + 1} at (${accessCardX}%, ${accessCardY}%) - Code: ${accessCardCode.join('')}`);
+    }
+    
+    function drawAccessCard() {
+      if (!secretCodeEntered || accessCardFound || accessCardCamera !== activeCam) return;
+      
+      const canvasW = camCanvas.width;
+      const canvasH = camCanvas.height;
+      const img = imgs[activeCam];
+      if (!img || !img.complete) return;
+      
+      const baseScale = canvasH / img.naturalHeight;
+      let finalScale = baseScale;
+      if (CAMS[activeCam].zoom) {
+        const camZoomScale = baseScale * CAMS[activeCam].zoom.scale;
+        finalScale = baseScale + (camZoomScale - baseScale) * currentZoomLevel;
+      }
+      
+      const displayW = img.naturalWidth * finalScale;
+      const displayH = img.naturalHeight * finalScale;
+      const maxScrollX = Math.max(0, displayW - canvasW);
+      const maxScrollY = Math.max(0, displayH - canvasH);
+      const offsetX = -(panX / 100) * maxScrollX;
+      const offsetY = -(panY / 100) * maxScrollY;
+      
+      const cardDisplayX = (accessCardX / 100) * displayW + offsetX;
+      const cardDisplayY = (accessCardY / 100) * displayH + offsetY;
+      
+      // Draw white rectangle (access card)
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.fillRect(cardDisplayX, cardDisplayY, 30, 20);
+      ctx.strokeStyle = '#ccc';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(cardDisplayX, cardDisplayY, 30, 20);
+    }
+    
+    function tryClickAccessCard(clickX, clickY) {
+      if (!secretCodeEntered || accessCardFound || accessCardCamera !== activeCam) return false;
+      
+      const canvasW = camCanvas.width;
+      const canvasH = camCanvas.height;
+      const img = imgs[activeCam];
+      if (!img || !img.complete) return false;
+      
+      const baseScale = canvasH / img.naturalHeight;
+      let finalScale = baseScale;
+      if (CAMS[activeCam].zoom) {
+        const camZoomScale = baseScale * CAMS[activeCam].zoom.scale;
+        finalScale = baseScale + (camZoomScale - baseScale) * currentZoomLevel;
+      }
+      
+      const displayW = img.naturalWidth * finalScale;
+      const displayH = img.naturalHeight * finalScale;
+      const maxScrollX = Math.max(0, displayW - canvasW);
+      const maxScrollY = Math.max(0, displayH - canvasH);
+      const offsetX = -(panX / 100) * maxScrollX;
+      const offsetY = -(panY / 100) * maxScrollY;
+      
+      const cardDisplayX = (accessCardX / 100) * displayW + offsetX;
+      const cardDisplayY = (accessCardY / 100) * displayH + offsetY;
+      
+      // Check if click is within card bounds
+      if (clickX >= cardDisplayX && clickX <= cardDisplayX + 30 &&
+          clickY >= cardDisplayY && clickY <= cardDisplayY + 20) {
+        accessCardFound = true;
+        showAccessCardCode();
+        return true;
+      }
+      return false;
+    }
+    
+    function showAccessCardCode() {
+      console.log('Access card found! Code:', accessCardCode.join(''));
+      playButtonSfx();
+      
+      const overlay = document.getElementById('card-code-overlay');
+      const codeText = document.getElementById('card-code-text');
+      codeText.textContent = accessCardCode.join(' - ');
+      overlay.classList.add('visible');
+      
+      // Pause game
+      gameOver = true; // Temporarily pause
+    }
+    
+    function tryClickGhost(clickX, clickY) {
+      if (!ghostActive) return false;
+      if (activeCam !== ghostCamera) return false;
+
+      const canvasW = camCanvas.width;
+      const canvasH = camCanvas.height;
+
+      const img = imgs[activeCam];
+      if (!img || !img.complete) return false;
+
+      const ghostSize = canvasH * 0.45;
+
+      const baseScale = canvasH / img.naturalHeight;
+      let finalScale = baseScale;
+      if (CAMS[activeCam].zoom) {
+        const camZoomScale = baseScale * CAMS[activeCam].zoom.scale;
+        finalScale = baseScale + (camZoomScale - baseScale) * currentZoomLevel;
+      }
+
+      const displayW = img.naturalWidth * finalScale;
+      const displayH = img.naturalHeight * finalScale;
+
+      const maxScrollX = Math.max(0, displayW - canvasW);
+      const maxScrollY = Math.max(0, displayH - canvasH);
+
+      const offsetX = -(panX / 100) * maxScrollX;
+      const offsetY = -(panY / 100) * maxScrollY;
+
+      const ghostDisplayX = (ghostX / 100) * displayW + offsetX;
+      const ghostDisplayY = (ghostY / 100) * displayH + offsetY;
+
+      // Check if click is within ghost bounds
+      const dx = clickX - ghostDisplayX;
+      const dy = clickY - (ghostDisplayY - ghostSize / 2);
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance < ghostSize / 2) {
+        clickGhost();
+        return true;
+      }
+      return false;
+    }
+
+    function tryClickHelicopter(clickX, clickY) {
+      // Only clickable on CAM 10 when all conditions are met
+      if (activeCam !== 9) return false; // CAM 10 is index 9
+      if (!partsCollected || !filesFound || !capturedBigStein || !capturedTrump || !capturedGhost) return false;
+      if (helicopterRepaired) return false; // Already repaired
+      
+      // Helicopter is clickable anywhere on the image (simplified detection)
+      // Since the entire camera shows the helicopter, any click on the camera counts
+      playButtonSfx();
+      showCaptureFlash('HELICOPTER FOUND - REPAIR IT!');
+      document.getElementById('helicopter-overlay').classList.add('visible');
+      return true;
+    }
 
     // ── Computer / Terminal logic ─────────────────────────────────────────────
     (function () {
@@ -5527,7 +6667,15 @@
       screenZone.addEventListener('click', () => {
         if (!booted) return;
         playButtonSfx();
-        termOutput.textContent = '';
+        
+        // Show ambulance hint if enabled
+        if (showAmbulanceHint && !filesFound && !secretCodeEntered) {
+          termOutput.textContent = 'Hint: Ambulance';
+          termOutput.style.color = '#ffdd00';
+        } else {
+          termOutput.textContent = '';
+        }
+        
         inputA.value = '';
         inputB.value = '';
         inputC.value = '';
@@ -5545,6 +6693,19 @@
         if (isNaN(a) || isNaN(b) || isNaN(c)) {
           termOutput.textContent = 'ERROR: MISSING INPUT';
           termOutput.style.color = '#ff3333';
+          return;
+        }
+
+        // Check for secret code 9-1-1 (only if files not collected yet)
+        if (a === 9 && b === 1 && c === 1 && !filesFound && !secretCodeEntered) {
+          secretCodeEntered = true;
+          termOutput.textContent = '> ACCESS GRANTED - LIGHTS OFF';
+          termOutput.style.color = '#00ff50';
+          
+          // Turn off lights after 2 seconds
+          setTimeout(() => {
+            triggerLightsOff();
+          }, 2000);
           return;
         }
 
@@ -5580,8 +6741,14 @@
           if (!notesArea.value.includes(hintLine)) {
             notesArea.value += (notesArea.value ? '\n' : '') + hintLine;
           }
+          // Enable ambulance hint after computing correct numbers
+          showAmbulanceHint = true;
+          // Mark that numbers have been computed successfully
+          numbersComputed = true;
         } else {
           termOutput.textContent = `> CAM #${result}`;
+          // Mark that numbers have been computed successfully
+          numbersComputed = true;
         }
       });
 
@@ -5614,11 +6781,26 @@
       // Expose sync so togglePanel can call it directly
       window._computerSyncVisibility = function() {
         if (gameState !== 'game' || gameOver) return;
-        if (!camOpen && !booted && !booting) {
-          powerBtn.style.display = 'block';
-        } else if (camOpen) {
-          powerBtn.style.display = 'none';
+        
+        // Hide/show computer elements based on camera state
+        if (camOpen) {
+          // Cameras are open - hide computer elements
+          powerBtn.classList.add('hidden-by-camera');
+          bootDiv.classList.add('hidden-by-camera');
+          screenZone.classList.add('hidden-by-camera');
+          terminal.classList.add('hidden-by-camera');
           terminal.classList.remove('visible');
+        } else {
+          // Cameras are closed - show computer elements
+          powerBtn.classList.remove('hidden-by-camera');
+          bootDiv.classList.remove('hidden-by-camera');
+          screenZone.classList.remove('hidden-by-camera');
+          terminal.classList.remove('hidden-by-camera');
+          
+          // Show power button only if not booted/booting
+          if (!booted && !booting) {
+            powerBtn.style.display = 'block';
+          }
         }
       };
     })();
@@ -5632,52 +6814,21 @@
       const scaleY = camCanvas.height / rect.height;
       const clickX = (e.clientX - rect.left) * scaleX;
       const clickY = (e.clientY - rect.top)  * scaleY;
-
-      // Try collecting a cue number first
+ 
+      // Try clicking the ghost FIRST (highest priority to prevent accidental file clicks)
+      if (tryClickGhost(clickX, clickY)) return;
+      
+      // Try collecting a cue number
       if (tryClickCueNumber(clickX, clickY)) return;
 
       // Try clicking the file hotspot
       if (tryClickFileHotspot(clickX, clickY)) return;
-
-      // Ghost click
-      if (!ghostActive) return;
-      if (activeCam !== ghostCamera) return;
-
-      const canvasW = camCanvas.width;
-      const canvasH = camCanvas.height;
-
-      const img = imgs[activeCam];
-      if (!img || !img.complete) return;
-
-      const ghostSize = canvasH * 0.45;
-
-      const baseScale = canvasH / img.naturalHeight;
-      let finalScale = baseScale;
-      if (CAMS[activeCam].zoom) {
-        const camZoomScale = baseScale * CAMS[activeCam].zoom.scale;
-        finalScale = baseScale + (camZoomScale - baseScale) * currentZoomLevel;
-      }
-
-      const displayW = img.naturalWidth * finalScale;
-      const displayH = img.naturalHeight * finalScale;
-
-      const maxScrollX = Math.max(0, displayW - canvasW);
-      const maxScrollY = Math.max(0, displayH - canvasH);
-
-      const offsetX = -(panX / 100) * maxScrollX;
-      const offsetY = -(panY / 100) * maxScrollY;
-
-      const ghostDisplayX = (ghostX / 100) * displayW + offsetX;
-      const ghostDisplayY = (ghostY / 100) * displayH + offsetY;
-
-      // Check if click is within ghost bounds
-      const dx = clickX - ghostDisplayX;
-      const dy = clickY - (ghostDisplayY - ghostSize / 2);
-      const distance = Math.sqrt(dx * dx + dy * dy);
-
-      if (distance < ghostSize / 2) {
-        clickGhost();
-      }
+      
+      // Try clicking the access card
+      if (tryClickAccessCard(clickX, clickY)) return;
+      
+      // Try clicking the helicopter (alternate ending)
+      if (tryClickHelicopter(clickX, clickY)) return;
     });
 
     window.addEventListener('keydown', e => {
