@@ -2298,8 +2298,8 @@
     // goes aggressive. First spawns 30s after aggressive, then every 30s after.
     // Each number stays on its camera permanently once spawned.
     const CUE_COUNT = 3;
-    const CUE_SPAWN_DELAY = 0;  // 15s after aggressive — all 3 appear at once
-    const CUE_SPAWN_INTERVAL = 0;   // no stagger — all spawn simultaneously
+    const CUE_SPAWN_DELAY = 15000;  // 15s after aggressive — all 3 appear at once
+    const CUE_SPAWN_INTERVAL = 10000;   // no stagger — all spawn simultaneously
 
     let cueNumbers = [];       // array of { value, camera, x, y } — populated at game start
     let cueSpawned = [];       // which cues are currently visible (bool per index)
