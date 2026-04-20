@@ -472,7 +472,7 @@
       width: 120px;
       height: 120px;
       cursor: pointer;
-      z-index: 5;
+      z-index: 1;
       display: none;
       transition: transform 0.2s;
     }
@@ -2578,7 +2578,7 @@
     // CONFIG
     // ═══════════════════════════════════════════════════════════════════════════
     const REQUIRED_SCREENSHOTS = 3;
-    const BIGSTEIN_SPAWN_DELAY = 30000; // seconds before Big Stein spawns
+    const BIGSTEIN_SPAWN_DELAY = 30000; // 30 seconds (in milliseconds) before Big Stein spawns
     const PASSIVE_MOVE_DELAY = 20000; // 20 seconds before passive move
     const AGGRESSIVE_STARE_TIME = 3000; // 3 seconds staring after screenshot
     const STATIC_DURATION = 3000; // 3 seconds of static
@@ -3415,7 +3415,7 @@
     function spawnBigStein() {
       const elapsed = (Date.now() - nightStart) / 1000;
 
-      if (elapsed < BIGSTEIN_SPAWN_DELAY) return;
+      if (elapsed < BIGSTEIN_SPAWN_DELAY / 1000) return; // Convert milliseconds to seconds for comparison
       if (bigStein.state !== BIGSTEIN_STATE.IDLE) return;
 
       // Random spawn on allowed cameras (5-11)
