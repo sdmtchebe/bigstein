@@ -2731,6 +2731,7 @@
     let targetZoomLevel = 0;
     let camOpen = false;
     let nightStart = null; // Timer starts on first screenshot
+    let gameStartTime = null; // Timer for Big Stein spawn delay
     let survived = false;
     let gameOver = false;
     let screenshots = 0;
@@ -2894,8 +2895,8 @@
     // goes aggressive. First spawns 30s after aggressive, then every 30s after.
     // Each number stays on its camera permanently once spawned.
     const CUE_COUNT = 3;
-    const CUE_SPAWN_DELAY = 15000;  // 15s after aggressive — all 3 appear at once
-    const CUE_SPAWN_INTERVAL = 10000;   // no stagger — all spawn simultaneously
+    const CUE_SPAWN_DELAY = 30000;  // 30s after aggressive — first number appears
+    const CUE_SPAWN_INTERVAL = 10000;   // 10s between each number spawn
 
     let cueNumbers = [];       // array of { value, camera, x, y } — populated at game start
     let cueSpawned = [];       // which cues are currently visible (bool per index)
@@ -3229,6 +3230,7 @@
       storylineDiv.classList.remove('visible');
       gameDiv.classList.add('visible');
       nightStart = null; // Timer will start on first screenshot
+      gameStartTime = Date.now(); // Start Big Stein spawn timer immediately
       screenshots = 0;
       survived = false;
       gameOver = false;
@@ -3413,7 +3415,10 @@
     }
 
     function spawnBigStein() {
-      const elapsed = (Date.now() - nightStart) / 1000;
+      // Don't spawn if game just started - wait 30 seconds from game start
+      if (!gameStartTime) return;
+      
+      const elapsed = (Date.now() - gameStartTime) / 1000;
 
       if (elapsed < BIGSTEIN_SPAWN_DELAY / 1000) return; // Convert milliseconds to seconds for comparison
       if (bigStein.state !== BIGSTEIN_STATE.IDLE) return;
@@ -4144,15 +4149,22 @@
     function startCueNumberSpawns() {
       if (cueNumbersEnabled) return;
       cueNumbersEnabled = true;
-      console.log('Cue number spawning started (first in 30s)');
+      console.log('Cue number spawning started (first in 30s, then 10s intervals)');
+      console.log(`Total cue numbers to spawn: ${CUE_COUNT}`);
+      console.log(`Cue numbers array length: ${cueNumbers.length}`);
 
       for (let i = 0; i < CUE_COUNT; i++) {
         const delay = CUE_SPAWN_DELAY + i * CUE_SPAWN_INTERVAL;
         const idx = i;
+        const label = ['A', 'B', 'C'][idx];
+        console.log(`Scheduling cue #${label} to appear in ${delay/1000}s on CAM ${cueNumbers[idx].camera + 1}`);
+        
         const t = setTimeout(() => {
-          if (gameState !== 'game' || gameOver) return;
+          if (gameState !== 'game' || gameOver) {
+            console.log(`Cue #${label} spawn cancelled - game state: ${gameState}, gameOver: ${gameOver}`);
+            return;
+          }
           cueSpawned[idx] = true;
-          const label = ['A', 'B', 'C'][idx];
           console.log(`Cue #${label}=${cueNumbers[idx].value} appeared on CAM ${cueNumbers[idx].camera + 1}`);
         }, delay);
         cueSpawnTimers.push(t);
@@ -4189,24 +4201,15 @@
 
         if (drawX < -40 || drawX > canvasW + 40 || drawY < -20 || drawY > canvasH + 20) continue;
 
-        const fontSize = Math.round(canvasH * 0.04); // Increased from 0.028 to 0.04 for better visibility
+        const fontSize = Math.round(canvasH * 0.02); // Made smaller for less intrusive display
         const label = ['A', 'B', 'C'][i]; // Label each cue as A, B, or C
         ctx.save();
         ctx.font = `bold ${fontSize}px Courier New`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
-        // Draw background box for better visibility
-        const textMetrics = ctx.measureText(`${label}=${cue.value}`);
-        const textWidth = textMetrics.width;
-        const padding = 8;
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(drawX - textWidth/2 - padding, drawY - fontSize/2 - padding, textWidth + padding*2, fontSize + padding*2);
-        
-        // Draw text with glow effect
-        ctx.shadowColor = 'rgba(255, 255, 0, 0.9)';
-        ctx.shadowBlur = 8;
-        ctx.fillStyle = '#ffff00'; // Bright yellow for high visibility
+        // Draw white text without background
+        ctx.fillStyle = '#ffffff'; // White color
         ctx.fillText(`${label}=${cue.value}`, drawX, drawY);
         ctx.restore();
       }
@@ -4294,8 +4297,8 @@
       const imgClickY = ((clickY - offsetY) / displayH) * 100;
 
       // Hit tolerance in image-space percent — generous rectangle
-      const tolX = 8;
-      const tolY = 8;
+      const tolX = 15;
+      const tolY = 15;
 
       const hit = Math.abs(imgClickX - hotspot.x) <= tolX &&
                   Math.abs(imgClickY - hotspot.y) <= tolY;
