@@ -1511,6 +1511,48 @@
       opacity: 1;
     }
 
+    /* ── Files overlay ───────────────────────────────────────────────────── */
+    #files-overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85);
+      z-index: 60;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 30px;
+    }
+
+    #files-overlay.visible { display: flex; }
+
+    #files-img {
+      max-width: 420px;
+      max-height: 420px;
+      object-fit: contain;
+      border: 2px solid #00ff50;
+      box-shadow: 0 0 30px rgba(0,255,80,0.3);
+    }
+
+    #files-collect-btn {
+      background: none;
+      border: 3px solid #00ff50;
+      color: #00ff50;
+      font-family: 'Courier New', monospace;
+      font-size: 20px;
+      font-weight: bold;
+      padding: 14px 40px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-shadow: 0 0 10px #00ff50;
+      letter-spacing: 2px;
+    }
+
+    #files-collect-btn:hover {
+      background: #00ff50;
+      color: #000;
+    }
+
     /* Responsive scaling is handled by the #stage transform at runtime —
        no media queries needed: the entire 1920x1080 canvas scales as one. */
 
@@ -1853,6 +1895,12 @@
       <button id="terminal-close">CLOSE</button>
     </div>
 
+    <!-- Files found overlay -->
+    <div id="files-overlay">
+      <img id="files-img" src="assets/photos/files.png" alt="Files">
+      <button id="files-collect-btn">COLLECT FILES</button>
+    </div>
+
     <!-- Panel with SVG map -->
     <div id="panel">
       <div id="panel-title">── SECURITY CAMERAS ──</div>
@@ -1861,7 +1909,8 @@
 
     <div id="survived">
       <span>YOU WON</span>
-      <p style="font-size:24px;margin-top:20px;">5 AM — You survived the night</p>
+      <p style="font-size:24px;margin-top:20px;">Mission complete — files secured.</p>
+      <p id="final-screenshots" style="font-size:18px;margin-top:10px;opacity:0.7;"></p>
     </div>
   </div>
 
@@ -1904,70 +1953,6 @@
   <audio id="heartbeat-audio" src="assets/sounds/heartbeat.mp3" preload="auto" loop></audio>
 
   <script>
-    // ═══════════════════════════════════════════════════════════════════════════
-    // ASSET PATH RESOLVER
-    // Works whether files are in assets/photos & assets/sounds OR in the root.
-    // Call p(filename) for photos, s(filename) for sounds.
-    // ═══════════════════════════════════════════════════════════════════════════
-    const _photoBase = (function () {
-      const img = new Image();
-      img.src = 'assets/photos/room.png';
-      // We can't synchronously know if it loaded, so we probe via a flag set on error.
-      // Instead, use a simpler heuristic: check if the HTML src attributes already
-      // resolved (they were set before this script runs). We just expose both prefixes
-      // and let the browser pick via onerror fallback on each image load.
-      return 'assets/photos/';
-    })();
-
-    function p(file) { return 'assets/photos/' + file; }
-    function s(file) { return 'assets/sounds/' + file; }
-
-    // Fallback loader: tries assets/ path first, falls back to root on error
-    function loadImgWithFallback(imgEl, filename) {
-      imgEl.onerror = function () {
-        if (!imgEl.src.includes('assets/photos/')) return;
-        imgEl.onerror = null;
-        imgEl.src = filename;
-      };
-      imgEl.src = 'assets/photos/' + filename;
-    }
-
-    function loadAudioWithFallback(audioEl, filename) {
-      audioEl.onerror = function () {
-        if (!audioEl.src.includes('assets/sounds/')) return;
-        audioEl.onerror = null;
-        audioEl.src = filename;
-      };
-      audioEl.src = 'assets/sounds/' + filename;
-    }
-
-    // Helper: set img src with assets/ prefix + root fallback
-    function setSrc(el, filename) {
-      if (!el) return;
-      el.onerror = function () {
-        if (!el.src.includes('assets/photos/')) return;
-        el.onerror = null;
-        el.src = filename;
-      };
-      el.src = 'assets/photos/' + filename;
-    }
-
-    // Patch all img/audio elements with assets/ paths to fall back to root
-    document.addEventListener('DOMContentLoaded', function () {
-      document.querySelectorAll('img[src]').forEach(function (el) {
-        const src = el.getAttribute('src');
-        if (!src || !src.startsWith('assets/photos/')) return;
-        const bare = src.replace('assets/photos/', '');
-        el.onerror = function () { el.onerror = null; el.src = bare; };
-      });
-      document.querySelectorAll('audio[src]').forEach(function (el) {
-        const src = el.getAttribute('src');
-        if (!src || !src.startsWith('assets/sounds/')) return;
-        const bare = src.replace('assets/sounds/', '');
-        el.onerror = function () { el.onerror = null; el.src = bare; };
-      });
-    });
-
     // ═══════════════════════════════════════════════════════════════════════════
     // STAGE SCALER — uniformly scale the 1920x1080 design surface to fit any
     // viewport while preserving aspect ratio (letterboxed on non-16:9 screens).
@@ -2016,6 +2001,7 @@
       "Lure Trump out of a vent using HONK — but only if you have spotted him in the vent first. Honk on the nearest camera to the vent that he's in to get him out.",
       "If Trump reaches your room, hit [ESC] to exit cameras and hide [E].",
       "Your real goal is survival. Stall Big Stein using every tool available. If you make it to 5 AM, you win.",
+      "THE FILES: Somewhere in the facility, a set of classified files is hidden. Your job is to find them. Pay close attention while scanning the cameras — small numbered cues will appear on the feeds after Big Stein turns hostile. Click on them. Write them down to not forget in your NOTES (Control Panel → Notes)",
       "Good luck, operator."
     ];
 
@@ -2048,19 +2034,19 @@
 
     // 11 cameras with PNG files
     const CAMS = [
-      { name: "CAM 1",  file: "cam1.png",  zoom: { scale: 2 } },
-      { name: "CAM 2",  file: "cam2.png",  zoom: { scale: 2 } },
-      { name: "CAM 3",  file: "cam3.png",  zoom: { scale: 2 } },
-      { name: "CAM 4",  file: "cam4.png",  zoom: { scale: 2 } },
-      { name: "CAM 5",  file: "cam5.png",  zoom: { scale: 2 } },
-      { name: "CAM 6",  file: "cam6.png",  zoom: { scale: 2 } },
-      { name: "CAM 7",  file: "cam7.png",  zoom: { scale: 2 } },
-      { name: "CAM 8",  file: "cam8.png",  zoom: { scale: 2 } },
-      { name: "CAM 9",  file: "cam9.png",  zoom: { scale: 2 } },
-      { name: "CAM 10", file: "cam10.png", zoom: { scale: 2 } },
-      { name: "CAM 11", file: "cam11.png", zoom: { scale: 2 } },
-      { name: "VENT 1", file: "vent1.png", zoom: { scale: 2 }, noPan: true },
-      { name: "VENT 2", file: "vent2.png", zoom: { scale: 2 }, noPan: true }
+      { name: "CAM 1", file: "assets/photos/cam1.png", zoom: { scale: 2 } },
+      { name: "CAM 2", file: "assets/photos/cam2.png", zoom: { scale: 2 } },
+      { name: "CAM 3", file: "assets/photos/cam3.png", zoom: { scale: 2 } },
+      { name: "CAM 4", file: "assets/photos/cam4.png", zoom: { scale: 2 } },
+      { name: "CAM 5", file: "assets/photos/cam5.png", zoom: { scale: 2 } },
+      { name: "CAM 6", file: "assets/photos/cam6.png", zoom: { scale: 2 } },
+      { name: "CAM 7", file: "assets/photos/cam7.png", zoom: { scale: 2 } },
+      { name: "CAM 8", file: "assets/photos/cam8.png", zoom: { scale: 2 } },
+      { name: "CAM 9", file: "assets/photos/cam9.png", zoom: { scale: 2 } },
+      { name: "CAM 10", file: "assets/photos/cam10.png", zoom: { scale: 2 } },
+      { name: "CAM 11", file: "assets/photos/cam11.png", zoom: { scale: 2 } },
+      { name: "VENT 1", file: "assets/photos/vent1.png", zoom: { scale: 2 }, noPan: true },
+      { name: "VENT 2", file: "assets/photos/vent2.png", zoom: { scale: 2 }, noPan: true }
     ];
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -2312,8 +2298,8 @@
     // goes aggressive. First spawns 30s after aggressive, then every 30s after.
     // Each number stays on its camera permanently once spawned.
     const CUE_COUNT = 3;
-    const CUE_SPAWN_DELAY = 30000;  // 30s after aggressive before first cue
-    const CUE_SPAWN_INTERVAL = 30000; // 30s between each cue
+    const CUE_SPAWN_DELAY = 0;  // 15s after aggressive — all 3 appear at once
+    const CUE_SPAWN_INTERVAL = 0;   // no stagger — all spawn simultaneously
 
     let cueNumbers = [];       // array of { value, camera, x, y } — populated at game start
     let cueSpawned = [];       // which cues are currently visible (bool per index)
@@ -2322,6 +2308,17 @@
     let cueNumbersEnabled = false; // only active after aggressive
     let fileCamera = -1;       // which cam (1,3,5,6,7) the file is hidden on this game
     let lastTripletKey = '';   // "A,B,C" of last used triplet — ensures variety across games
+    let filesFound = false;    // whether the player has found the files this game
+
+    // File hotspot positions per camera (image-space %, x=left%, y=top%)
+    // Mapped from the red circles in the camera images
+    const FILE_HOTSPOTS = {
+      1: { x: 11, y: 78 },  // CAM 1 — chest, bottom-left
+      3: { x: 19, y: 20 },  // CAM 3 — lamp, top-left
+      5: { x: 65, y: 63 },  // CAM 5 — shelf, center-right
+      6: { x: 48, y: 33 },  // CAM 6 — cart/shelf, center
+      7: { x: 79, y: 79 },  // CAM 7 — drawer, bottom-right
+    };
 
     // ═══════════════════════════════════════════════════════════════════════════
     // DOM REFS
@@ -2443,7 +2440,7 @@
     function loadAll() {
       return new Promise(resolve => {
         let done = 0;
-        const total = CAMS.length + 8;
+        const total = CAMS.length + 14; // 13 cams + 10 character imgs + 4 other
 
         function progress() {
           done++;
@@ -2455,42 +2452,76 @@
 
         CAMS.forEach((cam, i) => {
           const img = new Image();
-          img.onload = () => { console.log(`Camera ${i + 1} loaded: ${cam.file}`); progress(); };
-          img.onerror = () => {
-            if (img.src.includes('assets/photos/')) {
-              img.onerror = () => { console.error(`FAILED to load camera ${i + 1}: ${cam.file}`); progress(); };
-              img.src = cam.file;
-            } else { console.error(`FAILED to load camera ${i + 1}: ${cam.file}`); progress(); }
+          img.onload = () => {
+            console.log(`Camera ${i + 1} loaded: ${cam.file}`);
+            progress();
           };
-          img.src = 'assets/photos/' + cam.file;
+          img.onerror = () => {
+            console.error(`FAILED to load camera ${i + 1}: ${cam.file}`);
+            progress();
+          };
+          img.src = cam.file;
           imgs[i] = img;
         });
 
-        function mkImg(filename, cb) {
-          const img = new Image();
-          img.onload = cb;
-          img.onerror = function() {
-            if (img.src.includes('assets/photos/')) { img.onerror = cb; img.src = filename; }
-            else cb();
-          };
-          img.src = 'assets/photos/' + filename;
-          return img;
-        }
-
         // Load Big Stein images
-        bigSteinBackImg    = mkImg('backcharacter.png',  progress);
-        bigSteinFrontImg   = mkImg('character.png',      progress);
-        bigSteinInvertedImg= mkImg('bigsteininvert.png', progress);
-        officesteinImg     = mkImg('officestein.png',    progress);
-        trumpImg           = mkImg('trump.png',          progress);
-        trumpVent1Img      = mkImg('trumpvent1.png',     progress);
-        trumpVent2Img      = mkImg('trumpvent2.png',     progress);
-        trumpRoomImg       = mkImg('trumproom.png',      progress);
-        trumpJumpscareImg  = mkImg('trumpjumpscare.png', progress);
-        ghostImg           = mkImg('ghost.png',          progress);
+        bigSteinBackImg = new Image();
+        bigSteinBackImg.onload = progress;
+        bigSteinBackImg.onerror = progress;
+        bigSteinBackImg.src = 'assets/photos/backcharacter.png';
 
-        const otherFiles = ['lobby.png', 'bigstein.jpeg', 'storylinebackround.png', 'room.png'];
-        otherFiles.forEach(f => mkImg(f, progress));
+        bigSteinFrontImg = new Image();
+        bigSteinFrontImg.onload = progress;
+        bigSteinFrontImg.onerror = progress;
+        bigSteinFrontImg.src = 'assets/photos/character.png';
+
+        bigSteinInvertedImg = new Image();
+        bigSteinInvertedImg.onload = progress;
+        bigSteinInvertedImg.onerror = progress;
+        bigSteinInvertedImg.src = 'assets/photos/bigsteininvert.png';
+
+        officesteinImg = new Image();
+        officesteinImg.onload = progress;
+        officesteinImg.onerror = progress;
+        officesteinImg.src = 'assets/photos/officestein.png';
+
+        trumpImg = new Image();
+        trumpImg.onload = progress;
+        trumpImg.onerror = progress;
+        trumpImg.src = 'assets/photos/trump.png';
+
+        trumpVent1Img = new Image();
+        trumpVent1Img.onload = progress;
+        trumpVent1Img.onerror = progress;
+        trumpVent1Img.src = 'assets/photos/trumpvent1.png';
+
+        trumpVent2Img = new Image();
+        trumpVent2Img.onload = progress;
+        trumpVent2Img.onerror = progress;
+        trumpVent2Img.src = 'assets/photos/trumpvent2.png';
+
+        trumpRoomImg = new Image();
+        trumpRoomImg.onload = progress;
+        trumpRoomImg.onerror = progress;
+        trumpRoomImg.src = 'assets/photos/trumproom.png';
+
+        trumpJumpscareImg = new Image();
+        trumpJumpscareImg.onload = progress;
+        trumpJumpscareImg.onerror = progress;
+        trumpJumpscareImg.src = 'assets/photos/trumpjumpscare.png';
+
+        ghostImg = new Image();
+        ghostImg.onload = progress;
+        ghostImg.onerror = progress;
+        ghostImg.src = 'assets/photos/ghost.png';
+
+        const otherAssets = ['assets/photos/lobby.png', 'assets/photos/bigstein.jpeg', 'assets/photos/storylinebackround.png', 'assets/photos/room.png'];
+        otherAssets.forEach(src => {
+          const img = new Image();
+          img.onload = progress;
+          img.onerror = progress;
+          img.src = src;
+        });
 
         churchBellAudio = document.getElementById('churchbell-audio');
         honkAudio = document.getElementById('honk-audio');
@@ -2605,6 +2636,8 @@
       capturedTrump = false;
       capturedGhost = false;
       fileCamera = -1;
+      filesFound = false;
+      document.getElementById('files-overlay').classList.remove('visible');
 
       // Reset Big Stein
       bigStein.state = BIGSTEIN_STATE.IDLE;
@@ -2653,7 +2686,7 @@
 
       // Reset room background
       const roomBg = document.getElementById('room-bg');
-      if (roomBg) setSrc(roomBg, 'room.png');
+      if (roomBg) roomBg.src = 'assets/photos/room.png';
 
       updateRageUI();
       resetOxygen(); // Reset oxygen system
@@ -3450,7 +3483,8 @@
         const t = setTimeout(() => {
           if (gameState !== 'game' || gameOver) return;
           cueSpawned[idx] = true;
-          console.log(`Cue #${cueNumbers[idx].value} appeared on CAM ${cueNumbers[idx].camera + 1}`);
+          const label = ['A', 'B', 'C'][idx];
+          console.log(`Cue #${label}=${cueNumbers[idx].value} appeared on CAM ${cueNumbers[idx].camera + 1}`);
         }, delay);
         cueSpawnTimers.push(t);
       }
@@ -3487,6 +3521,7 @@
         if (drawX < -40 || drawX > canvasW + 40 || drawY < -20 || drawY > canvasH + 20) continue;
 
         const fontSize = Math.round(canvasH * 0.028);
+        const label = ['A', 'B', 'C'][i]; // Label each cue as A, B, or C
         ctx.save();
         ctx.font = `bold ${fontSize}px Courier New`;
         ctx.textAlign = 'center';
@@ -3494,7 +3529,7 @@
         ctx.shadowColor = 'rgba(0,0,0,0.8)';
         ctx.shadowBlur = 4;
         ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
-        ctx.fillText(String(cue.value), drawX, drawY);
+        ctx.fillText(`${label}=${cue.value}`, drawX, drawY);
         ctx.restore();
       }
     }
@@ -3532,17 +3567,70 @@
         const dy = clickY - drawY;
         if (Math.sqrt(dx * dx + dy * dy) <= hitRadius) {
           cueCollected[i] = true;
-          showCaptureFlash(`NOTE: ${cue.value}`);
-          console.log(`Cue number ${cue.value} collected from CAM ${cue.camera + 1}`);
+          const label = ['A', 'B', 'C'][i];
+          showCaptureFlash(`NOTE: ${label}=${cue.value}`);
+          console.log(`Cue number ${label}=${cue.value} collected from CAM ${cue.camera + 1}`);
           return true;
         }
       }
       return false;
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // TRUMP MECHANIC
-    // ═══════════════════════════════════════════════════════════════════════════
+    function tryClickFileHotspot(clickX, clickY) {
+      if (!camOpen) return false;
+      if (filesFound) return false;
+      if (!fileCamera || fileCamera === -1) return false;
+
+      // File is on this camera? (fileCamera is 1-indexed, activeCam is 0-indexed)
+      if (activeCam !== fileCamera - 1) return false;
+
+      const hotspot = FILE_HOTSPOTS[fileCamera];
+      if (!hotspot) return false;
+
+      const canvasW = camCanvas.width;
+      const canvasH = camCanvas.height;
+      const img = imgs[activeCam];
+      if (!img || !img.complete || img.naturalWidth === 0) return false;
+
+      const baseScale = canvasH / img.naturalHeight;
+      let finalScale = baseScale;
+      if (CAMS[activeCam].zoom) {
+        const camZoomScale = baseScale * CAMS[activeCam].zoom.scale;
+        finalScale = baseScale + (camZoomScale - baseScale) * currentZoomLevel;
+      }
+      const displayW = img.naturalWidth * finalScale;
+      const displayH = img.naturalHeight * finalScale;
+      const maxScrollX = Math.max(0, displayW - canvasW);
+      const maxScrollY = Math.max(0, displayH - canvasH);
+      const offsetX = -(panX / 100) * maxScrollX;
+      const offsetY = -(panY / 100) * maxScrollY;
+
+      // Convert click position back to image-space percentage
+      const imgClickX = ((clickX - offsetX) / displayW) * 100;
+      const imgClickY = ((clickY - offsetY) / displayH) * 100;
+
+      // Hit tolerance in image-space percent — generous rectangle
+      const tolX = 8;
+      const tolY = 8;
+
+      const hit = Math.abs(imgClickX - hotspot.x) <= tolX &&
+                  Math.abs(imgClickY - hotspot.y) <= tolY;
+
+      console.log(`[FILE CLICK] CAM ${fileCamera} | imgClick=(${imgClickX.toFixed(1)}%, ${imgClickY.toFixed(1)}%) | hotspot=(${hotspot.x}%, ${hotspot.y}%) | hit=${hit}`);
+
+      if (hit) {
+        console.log(`Files found on CAM ${fileCamera}!`);
+        showFilesOverlay();
+        return true;
+      }
+      return false;
+    }
+
+    function showFilesOverlay() {
+      const overlay = document.getElementById('files-overlay');
+      overlay.classList.add('visible');
+      playButtonSfx();
+    }
     function respawnTrump() {
       // Wait 15 seconds then respawn in bluff mode
       console.log('Trump retreating — will respawn in 15 seconds (BLUFF MODE)');
@@ -3645,7 +3733,7 @@
             console.log('Trump has reached the room!');
             // Swap room background to trumproom.png
             const roomBg = document.getElementById('room-bg');
-            if (roomBg) setSrc(roomBg, 'trumproom.png');
+            if (roomBg) roomBg.src = 'assets/photos/trumproom.png';
             // Start the 3-second hide challenge
             startTrumpRoomChallenge();
           }, TRUMP_CRAWL_DURATION);
@@ -3837,7 +3925,7 @@
           trump.inRoom = false;
           trump.roomChallengeActive = false;
           const roomBg = document.getElementById('room-bg');
-          if (roomBg) setSrc(roomBg, 'room.png');
+          if (roomBg) roomBg.src = 'assets/photos/room.png';
           // Let player come out of hiding naturally
         } else {
           // Caught — jumpscare even while hiding
@@ -3886,8 +3974,8 @@
         const jumpscareImg = document.getElementById('jumpscare-final');
         // Reset room bg to normal before jumpscare
         const roomBg = document.getElementById('room-bg');
-        if (roomBg) setSrc(roomBg, 'room.png');
-        setSrc(jumpscareImg, 'trumpjumpscare.png');
+        if (roomBg) roomBg.src = 'assets/photos/room.png';
+        jumpscareImg.src = 'assets/photos/trumpjumpscare.png';
         jumpscareImg.style.objectFit = 'contain';
         jumpscareImg.style.transformOrigin = 'center center';
         jumpscareImg.style.display = 'block';
@@ -3899,7 +3987,7 @@
           jumpscareImg.style.transform = 'translate(-50%, -50%) scale(0.1)';
           jumpscareImg.style.objectFit = 'cover'; // restore default
           jumpscareImg.style.transformOrigin = 'center 20%'; // restore default
-          setSrc(jumpscareImg, 'example.png'); // restore default
+          jumpscareImg.src = 'assets/photos/example.png'; // restore default
           if (jumpscareAudio) { jumpscareAudio.pause(); jumpscareAudio.currentTime = 0; }
           showGameOver(reason);
         }, 3000);
@@ -4825,7 +4913,7 @@
 
       // Phase 1: walkingright.png — enters from left, walks straight to the right
       walker.style.transition = 'none';
-      setSrc(walker, 'walkingright.png');
+      walker.src = 'assets/photos/walkingright.png';
       walker.style.display = 'block';
       walker.style.left = '-400px';
       walker.style.right = '';
@@ -4851,7 +4939,7 @@
         setTimeout(() => {
           // Phase 2: walkingleft.png — walks straight to the left
           walker.style.transition = 'none';
-          setSrc(walker, 'walkingleft.png');
+          walker.src = 'assets/photos/walkingleft.png';
           walker.style.left = '';
           walker.style.right = '-400px';
           walker.style.transform = '';
@@ -4970,6 +5058,41 @@
       const ghostMark  = capturedGhost    ? '✓' : '✗';
       screenshotsHud.textContent =
         `PHOTOS: BigStein[${steinMark}] Trump[${trumpMark}] Ghost[${ghostMark}]  ${screenshots}/${REQUIRED_SCREENSHOTS}`;
+      checkWinCondition();
+    }
+
+    function checkWinCondition() {
+      if (gameOver || survived) return;
+      if (!capturedBigStein || !capturedTrump || !capturedGhost || !filesFound) return;
+
+      survived = true;
+      console.log('WIN — all 3 photos captured and files collected!');
+
+      // Stop all audio
+      if (alarmAudio) { alarmAudio.pause(); alarmAudio.currentTime = 0; }
+      if (backgroundAudio) { backgroundAudio.pause(); backgroundAudio.currentTime = 0; }
+
+      // Clear ghost
+      if (ghostInterval) { clearInterval(ghostInterval); ghostInterval = null; }
+      if (ghostTimeout) { clearTimeout(ghostTimeout); ghostTimeout = null; }
+      if (ghostCountdownInterval) { clearInterval(ghostCountdownInterval); ghostCountdownInterval = null; }
+      ghostActive = false;
+      document.getElementById('ghost-timer').style.display = 'none';
+
+      // Clear cue timers
+      cueSpawnTimers.forEach(t => clearTimeout(t));
+      cueSpawnTimers = [];
+
+      // Hide game UI
+      camWrap.classList.remove('visible');
+      panel.classList.remove('visible');
+      document.getElementById('files-overlay').classList.remove('visible');
+
+      // Play church bell
+      playChurchBell();
+
+      // Show win screen
+      survDiv.style.display = 'flex';
     }
 
     function takeScreenshot() {
@@ -5317,6 +5440,16 @@
       document.getElementById('notes-overlay').classList.remove('visible');
     });
 
+    // Files collect button
+    document.getElementById('files-collect-btn').addEventListener('mousedown', () => {
+      playButtonSfx();
+      filesFound = true;
+      document.getElementById('files-overlay').classList.remove('visible');
+      showCaptureFlash('FILES COLLECTED!');
+      console.log('Files collected!');
+      checkWinCondition();
+    });
+
     // ── Computer / Terminal logic ─────────────────────────────────────────────
     (function () {
       const powerBtn     = document.getElementById('computer-power-btn');
@@ -5502,6 +5635,9 @@
 
       // Try collecting a cue number first
       if (tryClickCueNumber(clickX, clickY)) return;
+
+      // Try clicking the file hotspot
+      if (tryClickFileHotspot(clickX, clickY)) return;
 
       // Ghost click
       if (!ghostActive) return;
