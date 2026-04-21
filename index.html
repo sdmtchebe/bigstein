@@ -2670,11 +2670,11 @@
       0: [1],           // CAM 1 -> CAM 2
       1: [0, 4],        // CAM 2 -> CAM 1, CAM 5
       2: [3],           // CAM 3 -> CAM 4 (dead end, not on aggressive path)
-      3: [6],           // CAM 4 -> CAM 7
+      3: [6, 2],        // CAM 4 -> CAM 7 (60%), CAM 3 (40%)
       4: [1, 5],        // CAM 5 -> CAM 2, CAM 6
       5: [4, 6],        // CAM 6 -> CAM 5, CAM 7
-      6: [5, 7],        // CAM 7 -> CAM 6 (closer), CAM 8 (farther)
-      7: [6, 8, 9, 10], // CAM 8 -> CAM 7 (closer), CAM 9/10/11 (farther)
+      6: [5, 8],        // CAM 7 -> CAM 6 (closer), CAM 9 (farther) - removed direct connection to CAM 8
+      7: [8, 3],        // CAM 8 -> CAM 9 (50%), CAM 4 (50%) - removed direct connection to CAM 7
       8: [7],           // CAM 9 -> CAM 8
       9: [7],           // CAM 10 -> CAM 8
       10: [7]           // CAM 11 -> CAM 8
@@ -2751,8 +2751,21 @@
     const FLASHLIGHT_ENABLED = false; // Master switch - flashlight feature disabled
     
     // Alternate ending variables
-    let secretCodeEntered = false; // Whether 9-1-1 was entered
+    let secretCodeEntered = false; // Whether secret code was entered
     let showAmbulanceHint = false; // Show hint after computing numbers
+    let selectedSecretHint = ''; // The hint text to display
+    let selectedSecretCode = []; // The [a, b, c] code to enter
+    
+    // Possible secret hints and codes for alternate ending
+    const SECRET_CODES = [
+      { hint: 'Ambulance', code: [9, 1, 1] },
+      { hint: 'Olympic podium', code: [1, 2, 3] },
+      { hint: 'Trinity', code: [3, 3, 3] },
+      { hint: "Devil's number", code: [6, 6, 6] },
+      { hint: 'Lucky jackpot', code: [7, 7, 7] },
+      { hint: 'Century', code: [1, 0, 0] }
+    ];
+    
     let accessCardFound = false; // Whether player found the access card
     let accessCardCode = []; // 3 random numbers from 1-9
     let accessCardCamera = -1; // Which camera has the card
@@ -3269,6 +3282,13 @@
       // Reset alternate ending
       secretCodeEntered = false;
       showAmbulanceHint = false;
+      
+      // Select random secret code for this game
+      const selectedSecret = SECRET_CODES[Math.floor(Math.random() * SECRET_CODES.length)];
+      selectedSecretHint = selectedSecret.hint;
+      selectedSecretCode = selectedSecret.code;
+      console.log(`Secret code selected: "${selectedSecretHint}" = ${selectedSecretCode.join('-')}`);
+      
       accessCardFound = false;
       accessCardCode = [];
       accessCardCamera = -1;
@@ -3713,21 +3733,40 @@
 
       const adjacent = ADJACENCY[currentCam] || [];
 
-      // Find the adjacent camera with smallest distance to YOU
+      // Special probabilistic movement for specific cameras
       let bestCam = currentCam;
-      let bestDist = DISTANCE_TO_YOU[currentCam];
-
-      for (const adjCam of adjacent) {
-        const dist = DISTANCE_TO_YOU[adjCam];
-        if (dist < bestDist) {
-          bestDist = dist;
-          bestCam = adjCam;
+      
+      if (currentCam === 7) {
+        // CAM 8: 50% chance to go to CAM 9 (index 8), 50% to CAM 4 (index 3)
+        const options = [8, 3]; // CAM 9 and CAM 4
+        bestCam = options[Math.floor(Math.random() * options.length)];
+        console.log(`CAM 8 probabilistic choice: ${bestCam === 8 ? 'CAM 9 (50%)' : 'CAM 4 (50%)'}`);
+      } else if (currentCam === 3) {
+        // CAM 4: 60% chance to go to CAM 7 (index 6), 40% to CAM 3 (index 2)
+        const rand = Math.random();
+        if (rand < 0.6) {
+          bestCam = 6; // CAM 7
+          console.log(`CAM 4 probabilistic choice: CAM 7 (60%)`);
+        } else {
+          bestCam = 2; // CAM 3
+          console.log(`CAM 4 probabilistic choice: CAM 3 (40%)`);
+        }
+      } else {
+        // Normal pathfinding: Find the adjacent camera with smallest distance to YOU
+        let bestDist = DISTANCE_TO_YOU[currentCam];
+        
+        for (const adjCam of adjacent) {
+          const dist = DISTANCE_TO_YOU[adjCam];
+          if (dist < bestDist) {
+            bestDist = dist;
+            bestCam = adjCam;
+          }
         }
       }
 
       if (bestCam !== currentCam) {
         moveBigSteinToCamera(bestCam, silent, triggeredByScreenshot);
-        console.log(`Big Stein moved AGGRESSIVELY to CAM ${bestCam + 1} (dist: ${bestDist})${triggeredByScreenshot ? ' [FROM SCREENSHOT]' : ''}`);
+        console.log(`Big Stein moved AGGRESSIVELY from CAM ${currentCam + 1} to CAM ${bestCam + 1}${triggeredByScreenshot ? ' [FROM SCREENSHOT]' : ''}`);
 
         // Increment move count
         bigStein.moveCount++;
@@ -6671,9 +6710,9 @@
         if (!booted) return;
         playButtonSfx();
         
-        // Show ambulance hint if enabled
+        // Show secret hint if enabled
         if (showAmbulanceHint && !filesFound && !secretCodeEntered) {
-          termOutput.textContent = 'Hint: Ambulance';
+          termOutput.textContent = `Hint: ${selectedSecretHint}`;
           termOutput.style.color = '#ffdd00';
         } else {
           termOutput.textContent = '';
@@ -6699,8 +6738,8 @@
           return;
         }
 
-        // Check for secret code 9-1-1 (only if files not collected yet)
-        if (a === 9 && b === 1 && c === 1 && !filesFound && !secretCodeEntered) {
+        // Check for secret code (only if files not collected yet)
+        if (a === selectedSecretCode[0] && b === selectedSecretCode[1] && c === selectedSecretCode[2] && !filesFound && !secretCodeEntered) {
           secretCodeEntered = true;
           termOutput.textContent = '> ACCESS GRANTED - LIGHTS OFF';
           termOutput.style.color = '#00ff50';
